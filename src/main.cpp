@@ -1,8 +1,30 @@
 #include <Arduino.h>
 
-void setup() {
+#include "motor_movement.h"
 
-  
+  int board[8][8] = {
+      {2, 3, 4, 5, 6, 4, 3, 2},
+      {1, 1, 1, 1, 1, 1, 1, 1},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {1, 1, 1, 1, 1, 1, 1, 1},
+      {2, 3, 4, 5, 6, 4, 3, 2}
+  };
+
+MotorMovement motor_move;
+
+void setup() {
+  Serial.begin(9600);
+
+  motor_move.setBoard(board);
+  motor_move.printBoard();
+  motor_move.computeCellMovement(11, 31);
+  motor_move.printMoves();
+
+  //Serial.println(motor_move.checkPath(motor_move.test1, motor_move.test2, motor_move.test_move));
+
 }
 
 void loop() {
