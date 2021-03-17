@@ -80,6 +80,10 @@ private:
         command special_command;
     };
 
+    //proměnná k ukládání cety koně - pokud se zpracovává cesta pro koně; 0 - provedení v řádku/sloupci počátečního políčka; 1 - provedení v řádku/sloupci o 1 vyšší/nižší; -1 - výchozí
+    bool en_horse_move = false;
+    int horse_move = -1;
+
     //aktualni pozice
     cellPos act_position = {0, 0};  //mm
     cellPos act_cell_pos = {1, 0};  //políčka
@@ -90,7 +94,7 @@ private:
     //deklarace vectoru moves
     Vector<moveDec> moves;
     
-    
+    void addHorseMove(int _moveCellColumn, int _moveCellRow, motorPick _motor1, motorPick _motor2, int _a_positive, int _b_positive, int _a_negative, int _b_negative);
 
 public:
 
@@ -101,7 +105,7 @@ public:
     cellPos decodePos(int _value);  //dekéduje id políček -> rozloží je na řádky a sloupce
     
     command selectMoveType(cellPos _start, cellPos _end);
-    bool checkPath(cellPos _start, cellPos _end, pieceMoves _move); //vrátí true pokud je cesta pro figurku prázdná
+    bool checkPath(cellPos _start, cellPos _end, pieceMoves _move); //vrátí true pokud je cesta pro figurku prázdná; fce spoléhá na prázné koncové políčko
 
     void setBoard(int _board[8][8]);    //nastaví na šachovnici aktuální rozpoložení figurek
     void printBoard();  //vytiskne šachovnici
@@ -115,9 +119,9 @@ public:
     void setUp();   //zkalibruje motory a dojede na výchozí pozici výchozí pozici
     void doMove(int _startCell, int _endCell);  //nejprve vypočítá a poté provede pohyb
 
-    cellPos test1 = {1, 2};
-    cellPos test2 = {4, 2};
-    pieceMoves test_move = STRAIGHT;
+    cellPos test1 = {4, 4};
+    cellPos test2 = {6, 3};
+    pieceMoves test_move = HORSE;
 
 };
 
