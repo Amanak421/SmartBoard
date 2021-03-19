@@ -365,6 +365,10 @@ MotorMovement::command MotorMovement::selectMoveType(cellPos _start, cellPos _en
             if(checkPath(_start, _end, STRAIGHT)){
                 return CENTER_MOVE;
             }
+        }else{
+            if(checkPath(_start, _end, DIAGONAL)){
+                return DIA_MOVE;
+            }
         }
         break;
     case 2:

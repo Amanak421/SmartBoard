@@ -5,7 +5,7 @@
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
       {1, 1, 1, 1, 1, 1, 1, 1},
-      {0, 0, 0, 1, 0, 0, 0, 0},
+      {0, 1, 0, 1, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 5, 0, 1, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
@@ -21,7 +21,7 @@ void setup() {
   motor_move.setBoard(board);
   motor_move.printBoard();
 
-  motor_move.computeCellMovement(44, 24);
+  motor_move.computeCellMovement(11, 22);
   motor_move.printMoves();
 
   
