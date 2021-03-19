@@ -32,6 +32,9 @@ private:
     int move_row = 0;
     int move_column = 0;
 
+    //flag pro braní mimochodem
+    bool enPassantFlag = false;
+
     //matice pro ulozeni pozice figurek na sachvnici
     int board[8][8] = {
         {0, 0, 0, 0, 0, 0, 0, 0},
@@ -103,13 +106,15 @@ private:
     cellPos act_cell_pos = {1, 0};  //políčka
 
     //deklarace storage pro vector moves
-    moveDec move_storage[10];
+    moveDec move_storage[20];
 
     //deklarace vectoru moves
     Vector<moveDec> moves;
     
     void addHorseMove(int _moveCellColumn, int _moveCellRow, motorPick _motor1, motorPick _motor2, int _a_positive, int _b_positive, int _a_negative, int _b_negative);
-    void pieceOutMoveAdder(int _move_row, int _move_column, command _command);  //slouží jako pomocná fce pro addPieceOutMove, přidává pohyby motorů do vektoru
+    void pieceMoveAdder(int _move_row, int _move_column, command _command);  //slouží jako pomocná fce, přidává pohyby motorů do vektoru
+
+    
 
 public:
 
@@ -138,8 +143,12 @@ public:
     bool isPieceOutActive(cellPos _cell);   //zkontroluje zda není potřeba vyhodit figurku
     void addPieceOutMove(cellPos _cell, int _pieceColor);
 
-    cellPos test1 = {4, 4};
-    cellPos test2 = {6, 3};
+    /* SPECIÁLNÍ POHYBY */ 
+    void addCastlingMove(cellPos _start, cellPos _end);
+    void addEnPassantMove(cellPos _start, cellPos _end, int _pieceOutColor);
+
+    cellPos test1 = {3, 4};
+    cellPos test2 = {2, 5};
     pieceMoves test_move = HORSE;
 
 };

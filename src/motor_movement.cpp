@@ -10,8 +10,10 @@ MotorMovement::MotorMovement(){
     for(int i = 0; i < 8; i++){
         int _y = i;
         pieceOutCells[i].y = _y;
+        pieceOutCells[i].x = 0;
+        pieceOutCells[i].isFull = false;
         for(int k = 0; k < 4; k++){
-            pieceOutCells[i].isPostFull[k] = 0;
+            pieceOutCells[i].isPostFull[k] = false;
         }
     }
 
@@ -102,8 +104,6 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
 
         
     }
-
-    Serial.println("Dostal jsem se sem...");
 
     // přizazení odpovídajícího pohybu pro x - při pohybu po okrajích
     if(move_column > 0){
@@ -513,40 +513,72 @@ void MotorMovement::addPieceOutMove(cellPos _cell, int _pieceColor){
     int selectedCellPost = 0;
 
     //cyklus pro výběr místa a pozice pro figurku
-    int _startCell;
+
     if(_pieceColor == 0){
-        _startCell = 0;
-    }else{
-        _startCell = 4;
-    }
-    for(int i = _startCell; i < _startCell + 4; i ++){
-        if(!pieceOutCells[i].isFull){
-            for(int k = 0; k < 4; k++){
-                if(!pieceOutCells[i].isPostFull[k]){
-                    selectedPieceOutCell = i;
-                    selectedCellPost = k;
-                    break;
+ 
+        bool end_cycle = false;
+        for(int i = 0; i < 4; i++){
+            if(pieceOutCells[i].isFull == false){
+                for(int k = 0; k < 4; k++){
+                    if(pieceOutCells[i].isPostFull[k] == false){
+                        selectedPieceOutCell = i;
+                        selectedCellPost = k;
+                        end_cycle = true;
+                        break;
+                    }
                 }
+            }
+            if(end_cycle){
+                break;
+            }
+        }
+
+    }else{
+
+        bool end_cycle = false;
+        for(int i = 7; i > 3; i--){
+            if(pieceOutCells[i].isFull == false){
+                for(int k = 0; k < 4; k++){
+                    if(pieceOutCells[i].isPostFull[k] == false){
+                        selectedPieceOutCell = i;
+                        selectedCellPost = k;
+                        end_cycle = true;
+                        break;
+                    }
+                }
+            }
+            if(end_cycle){
+                break;
             }
         }
     }
+    
+
+    Serial.println(selectedPieceOutCell);
 
     //uložení vybraného místa pro figurku
     sel_piece_post = selectedCellPost;
 
+    int correction = 0; //korekce pro správné fungování vyhazování figurek
+    if(_pieceColor == 0){
+        correction = 1;
+    }else if(_pieceColor == 1){
+        correction = 0;
+    }
+
     //výpočet početu políček, o které je nutné se posunout
-    int out_move_row = _cell.y - pieceOutCells[selectedPieceOutCell].y; 
+    int out_move_row = _cell.y - pieceOutCells[selectedPieceOutCell].y - correction;     //přidá korekci - směr nahoru o 1 min
     int out_move_column = _cell.x - pieceOutCells[selectedPieceOutCell].x;
 
-    pieceOutMoveAdder(out_move_row, out_move_column, PIECE_OUT);    //přidá pohyb motorů
+    pieceMoveAdder(out_move_row, out_move_column, PIECE_OUT);    //přidá pohyb motorů
 
     board[_cell.y][_cell.x - 1] = 0;    //nastaví pozici, na které se nachází vyhozená figurka na 0 - bez figurky
 
     //výpočet početu políček, o které je nutné se vrátit
-    int ret_move_row = pieceOutCells[selectedPieceOutCell].y  - _cell.y;
+    int ret_move_row = pieceOutCells[selectedPieceOutCell].y  - _cell.y + correction;     //přidá korekci - správný návrat
     int ret_move_column = pieceOutCells[selectedPieceOutCell].x - _cell.x;
 
-    pieceOutMoveAdder(ret_move_row, ret_move_column, RET_PIECE_OUT);    //přidá pohyb motorů
+    pieceMoveAdder(ret_move_row, ret_move_column, RET_PIECE_OUT);    //přidá pohyb motorů
 
     //obsazení místa na políčku
     pieceOutCells[selectedPieceOutCell].isPostFull[selectedCellPost] = true;
@@ -557,7 +589,7 @@ void MotorMovement::addPieceOutMove(cellPos _cell, int _pieceColor){
 
 }
 
-void MotorMovement::pieceOutMoveAdder(int _move_row, int _move_column, command _command){
+void MotorMovement::pieceMoveAdder(int _move_row, int _move_column, command _command){
     // přizazení odpovídajícího pohybu pro x - při pohybu po okrajích
     if(_move_column > 0){
         moveDec cur_move = {X_MOTOR, _move_column, X_POSITIVE, _command};
@@ -575,4 +607,52 @@ void MotorMovement::pieceOutMoveAdder(int _move_row, int _move_column, command _
         moveDec cur_move = {Y_MOTOR, abs(_move_row), Y_NEGATIVE, _command};
         addMove(cur_move);
     }
+}
+
+void MotorMovement::addCastlingMove(cellPos _start, cellPos _end){
+    if(_start.x == 5 && _end.x == 3){  //rošáda je prováděna králem
+
+        int k_move_row = _start.y - _end.y;
+        int k_move_column = _start.x - _end.x;
+        pieceMoveAdder(k_move_row, k_move_column, CENTER_MOVE); //tah králem
+
+        pieceMoveAdder(0, _end.x - 1, BOTH); //cesta k věži
+
+        int c_move_row = 0;
+        int c_move_column = 4;
+        pieceMoveAdder(c_move_row, c_move_column, LIN_MOVE); //tah věží
+
+        act_cell_pos = {4, _start.y};   //zaktualizuje aktuální pozici
+
+    }else if(_start.x == 5 && _end.x == 7){
+
+        int q_move_row = _start.y - _end.y;
+        int q_move_column = _start.x - _end.x;
+        pieceMoveAdder(q_move_row, q_move_column, CENTER_MOVE);
+
+        pieceMoveAdder(0, _end.x - 8, BOTH); //cesta k věži
+
+        int c_move_row = 0;
+        int c_move_column = 2;
+        pieceMoveAdder(c_move_row, c_move_column, LIN_MOVE);
+
+        act_cell_pos = {6, _start.y};   //zaktualizuje aktuální pozici
+
+    }
+}
+
+void MotorMovement::addEnPassantMove(cellPos _start, cellPos _end, int _pieceOutColor){
+    
+    pieceMoveAdder(0, (_start.y - _end.y)*(-1), BOTH);  //přesuna motory k pěšci, kterého je potřeba vyhodit
+
+    cellPos out_piece = {_start.x + (_start.y - _end.y), _start.y};   //vyhodí pěšce
+    addPieceOutMove(out_piece, _pieceOutColor);
+
+    pieceMoveAdder(0, (_start.y - _end.y), BOTH);    //vrátí se k původnímu pěšci
+
+    int _move_row = _start.y - _end.y;  //přidá tah pěšcem
+    int _move_column = _start.x - _end.x;
+    pieceMoveAdder(_move_row, _move_column, DIA_MOVE);
+
+    act_cell_pos = _end;    //zaktualizuje aktuální pozici
 }
