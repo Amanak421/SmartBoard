@@ -62,7 +62,9 @@ private:
         LIN_MOVE,
         DIA_MOVE,
         CENTER_MOVE,
-        PIECE_OUT
+        PIECE_OUT,
+        RET_PIECE_OUT,
+        BOTH
     };
 
     //různé možnosti posunu figurky
@@ -80,6 +82,18 @@ private:
         command special_command;
     };
 
+    //struktura políčeka pro odkládání figurek
+    struct pieceOutCell{
+        int x = 0;
+        int y = 0;
+        bool isFull = false;
+        bool isPostFull[4] = {false, false, false, false};
+    };
+
+    //pole pro políčka vyhozených figurek
+    pieceOutCell pieceOutCells[8];
+    int sel_piece_post = -1;    // vybraná pozice pro vyřazenou figurku; default = -1 - není aktivní
+
     //proměnná k ukládání cety koně - pokud se zpracovává cesta pro koně; 0 - provedení v řádku/sloupci počátečního políčka; 1 - provedení v řádku/sloupci o 1 vyšší/nižší; -1 - výchozí
     bool en_horse_move = false;
     int horse_move = -1;
@@ -89,19 +103,21 @@ private:
     cellPos act_cell_pos = {1, 0};  //políčka
 
     //deklarace storage pro vector moves
-    moveDec storage[10];
+    moveDec move_storage[10];
 
     //deklarace vectoru moves
     Vector<moveDec> moves;
     
     void addHorseMove(int _moveCellColumn, int _moveCellRow, motorPick _motor1, motorPick _motor2, int _a_positive, int _b_positive, int _a_negative, int _b_negative);
+    void pieceOutMoveAdder(int _move_row, int _move_column, command _command);  //slouží jako pomocná fce pro addPieceOutMove, přidává pohyby motorů do vektoru
 
 public:
 
     MotorMovement();    //konstructor
 
     void computeCellMovement(int _startCell, int _endCell); //spočítá cestu z levého horního rohu políčka na levý horní roh políčka
-    void computeCellMovement(cellPos _startCell, int _endCell); //spočítá cestu z levého horního rohu políčka na levý horní roh políčka
+
+    void computeHomeToCellMovement(cellPos _startCell, cellPos _endCell); //spočítá cestu z levého horního rohu políčka na levý horní roh políčka
     cellPos decodePos(int _value);  //dekéduje id políček -> rozloží je na řádky a sloupce
     
     command selectMoveType(cellPos _start, cellPos _end);
@@ -118,6 +134,9 @@ public:
     void returnToHome();    //vrátí se na políčko 00
     void setUp();   //zkalibruje motory a dojede na výchozí pozici výchozí pozici
     void doMove(int _startCell, int _endCell);  //nejprve vypočítá a poté provede pohyb
+
+    bool isPieceOutActive(cellPos _cell);   //zkontroluje zda není potřeba vyhodit figurku
+    void addPieceOutMove(cellPos _cell, int _pieceColor);
 
     cellPos test1 = {4, 4};
     cellPos test2 = {6, 3};

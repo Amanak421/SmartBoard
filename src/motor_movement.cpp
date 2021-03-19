@@ -4,7 +4,17 @@
 
 MotorMovement::MotorMovement(){
     //přiřazení storage pro vector array
-    moves.setStorage(storage);
+    moves.setStorage(move_storage);
+
+    //nastavení políček pro vyhozené figurky
+    for(int i = 0; i < 8; i++){
+        int _y = i;
+        pieceOutCells[i].y = _y;
+        for(int k = 0; k < 4; k++){
+            pieceOutCells[i].isPostFull[k] = 0;
+        }
+    }
+
 }
 
 void MotorMovement::computeCellMovement(int _startCell, int _endCell){
@@ -12,6 +22,13 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     // vytvoření počátečního a koncového políčka a rozložení hodnot na x-sloupce a y-řádky
     cellPos startCell = decodePos(_startCell);
     cellPos endCell = decodePos(_endCell);
+
+    if(isPieceOutActive(endCell)){      //zkontroluje a popř. vyhodí figurku na cílové pozici
+        Serial.println("Vyhazuji figurku...");
+        //board[endCell.y][endCell.x - 1] = 0;
+        addPieceOutMove(endCell, 0);
+    }
+    Serial.println("Provádím klasický tah...");
 
     //výpočet početu políček, o které je nutné se posunout
     move_column = startCell.x - endCell.x;
@@ -62,7 +79,7 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
         
     }else if(move_type == CENTER_MOVE){
 
-        if(en_horse_move){  //pokud je aktivní pohyb koněm
+        if(en_horse_move == true && horse_move != -1){  //pokud je aktivní pohyb koněm
             if(horse_move == 0){
                 if(abs(move_column) == 2){      // v případě pohybu po řádku
                     addHorseMove(move_column, move_row, X_MOTOR, Y_MOTOR, X_POSITIVE, Y_POSITIVE, X_NEGATIVE, Y_NEGATIVE);
@@ -86,6 +103,8 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
         
     }
 
+    Serial.println("Dostal jsem se sem...");
+
     // přizazení odpovídajícího pohybu pro x - při pohybu po okrajích
     if(move_column > 0){
         moveDec cur_move = {X_MOTOR, move_column, X_POSITIVE, move_type};
@@ -106,17 +125,15 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
 
 }
 
-void MotorMovement::computeCellMovement(cellPos _startCell, int _endCell){
+void MotorMovement::computeHomeToCellMovement(cellPos _startCell, cellPos _endCell){
 
-    // vytvoření koncového políčka a rozložení hodnot na x-sloupce a y-řádky
-    cellPos endCell = decodePos(_endCell);
 
     //výpočet početu políček, o které je nutné se posunout
-    move_column = _startCell.x - endCell.x;
-    move_row = _startCell.y - endCell.y;
+    move_column = _startCell.x - _endCell.x;
+    move_row = _startCell.y - _endCell.y;
 
     //uloží koncovou pozici jako aktuální pozici motorů
-    act_cell_pos = endCell;
+    act_cell_pos = _endCell;
 
     #ifdef DEBUG    // debug
     Serial.print("Motor move column/row: ");
@@ -398,6 +415,7 @@ MotorMovement::command MotorMovement::selectMoveType(cellPos _start, cellPos _en
 }
 
 void MotorMovement::addMove(moveDec _move){
+    Serial.println("Přidávám pohyb...");
     moves.push_back(_move); //přidání pohybu do vektoru pohybů
 }
 
@@ -419,7 +437,12 @@ void MotorMovement::printMoves(){
         Serial.print(" Smer: ");
         Serial.print(moves[i].dir);
         Serial.print(" Specialni kod: ");
-        Serial.println(moves[i].special_command);
+        Serial.print(moves[i].special_command);
+        if(moves[i].special_command == PIECE_OUT){
+            Serial.print(" Vyhození figurky s pozicí: ");
+            Serial.print(sel_piece_post);
+        }
+        Serial.println();
     }
 }
 
@@ -450,7 +473,7 @@ void MotorMovement::returnToHome(){
     //vyčistí vektor pohybu
     clearMoves();
     //vypočítej cestu do výchozí pozice
-    computeCellMovement(act_cell_pos, HOME_POSITION);
+    
 
     /* SAMOTNÉ PROVEDENÍ POHYBU - ToDo  */
 
@@ -468,8 +491,84 @@ void MotorMovement::doMove(int _startCell, int _endCell){
     Serial.println(act_cell_pos.y);
     #endif
 
-    computeCellMovement(act_cell_pos, _startCell);  //vypočítá cestu cestu z aktuální pozice na startovní políčko
+    //vypočítá cestu cestu z aktuální pozice na startovní políčko
     computeCellMovement(_startCell, _endCell);  //vypočítá pohyb z políčka na políčko
 
     /*  SAMOTNÉ PROVEDENÍ TAHU  - ToDo */
+}
+
+bool MotorMovement::isPieceOutActive(cellPos _cell){
+    if(board[_cell.y][_cell.x - 1] != 0){
+        return true;
+    }
+    return false;
+}
+
+void MotorMovement::addPieceOutMove(cellPos _cell, int _pieceColor){
+    int selectedPieceOutCell = 0;
+    int selectedCellPost = 0;
+
+    //cyklus pro výběr místa a pozice pro figurku
+    int _startCell;
+    if(_pieceColor == 0){
+        _startCell = 0;
+    }else{
+        _startCell = 4;
+    }
+    for(int i = _startCell; i < _startCell + 4; i ++){
+        if(!pieceOutCells[i].isFull){
+            for(int k = 0; k < 4; k++){
+                if(!pieceOutCells[i].isPostFull[k]){
+                    selectedPieceOutCell = i;
+                    selectedCellPost = k;
+                    break;
+                }
+            }
+        }
+    }
+
+    //uložení vybraného místa pro figurku
+    sel_piece_post = selectedCellPost;
+
+    //výpočet početu políček, o které je nutné se posunout
+    int out_move_row = _cell.y - pieceOutCells[selectedPieceOutCell].y; 
+    int out_move_column = _cell.x - pieceOutCells[selectedPieceOutCell].x;
+
+    pieceOutMoveAdder(out_move_row, out_move_column, PIECE_OUT);    //přidá pohyb motorů
+
+    board[_cell.y][_cell.x - 1] = 0;    //nastaví pozici, na které se nachází vyhozená figurka na 0 - bez figurky
+
+    //výpočet početu políček, o které je nutné se vrátit
+    int ret_move_row = pieceOutCells[selectedPieceOutCell].y  - _cell.y;
+    int ret_move_column = pieceOutCells[selectedPieceOutCell].x - _cell.x;
+
+    pieceOutMoveAdder(ret_move_row, ret_move_column, RET_PIECE_OUT);    //přidá pohyb motorů
+
+    //obsazení místa na políčku
+    pieceOutCells[selectedPieceOutCell].isPostFull[selectedCellPost] = true;
+    //pokud jsou obsazena všechna místa -> políčko je plné
+    if(selectedCellPost == 3){
+        pieceOutCells[selectedPieceOutCell].isFull = true;
+    }
+
+}
+
+void MotorMovement::pieceOutMoveAdder(int _move_row, int _move_column, command _command){
+    // přizazení odpovídajícího pohybu pro x - při pohybu po okrajích
+    if(_move_column > 0){
+        moveDec cur_move = {X_MOTOR, _move_column, X_POSITIVE, _command};
+        addMove(cur_move);
+    }else{
+        moveDec cur_move = {X_MOTOR, abs(_move_column), X_NEGATIVE, _command};
+        addMove(cur_move);
+    }
+
+    // přizazení odpovídajícího pohybu pro y - při pohybu po okrajích
+    if(_move_row > 0){
+        moveDec cur_move = {Y_MOTOR, _move_row, Y_POSITIVE, _command};
+        addMove(cur_move);
+    }else{
+        moveDec cur_move = {Y_MOTOR, abs(_move_row), Y_NEGATIVE, _command};
+        addMove(cur_move);
+    }
 }

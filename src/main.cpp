@@ -5,9 +5,9 @@
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
       {1, 1, 1, 1, 1, 1, 1, 1},
+      {0, 0, 0, 1, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 5, 0, 0, 0, 0},
+      {0, 0, 0, 5, 0, 1, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0},
       {1, 1, 1, 1, 1, 1, 1, 1},
       {2, 3, 4, 5, 6, 4, 3, 2}
@@ -21,14 +21,10 @@ void setup() {
   motor_move.setBoard(board);
   motor_move.printBoard();
 
-  motor_move.computeCellMovement(44, 46);
-  motor_move.printMoves();
   motor_move.computeCellMovement(44, 24);
   motor_move.printMoves();
-  motor_move.computeCellMovement(44, 42);
-  motor_move.printMoves();
-  motor_move.computeCellMovement(44, 54);
-  motor_move.printMoves();
+
+  
 
   //Serial.println(motor_move.checkPath(motor_move.test1, motor_move.test2, motor_move.test_move));
 
