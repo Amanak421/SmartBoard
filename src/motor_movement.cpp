@@ -1,4 +1,27 @@
 #include "motor_movement.h"
+#include "A4988.h"
+
+//nastavení motorů
+#define MOTOR_STEPS 200
+#define RPM 120
+#define MICROSTEPS 4
+
+#define MS1 2
+#define MS2 2
+#define MS3 2
+
+//motor x
+#define DIR_X 14
+#define STEP_X 12
+
+A4988 stepper_x(MOTOR_STEPS, DIR_X, STEP_X, MS1, MS2, MS3);
+
+
+//motor y
+#define DIR_Y  25
+#define STEP_Y 26
+
+A4988 stepper_y(MOTOR_STEPS, DIR_Y, STEP_Y, MS1, MS2, MS3);
 
 //#define DEBUG
 
@@ -16,6 +39,25 @@ MotorMovement::MotorMovement(){
             pieceOutCells[i].isPostFull[k] = false;
         }
     }
+
+    //připojení endstopů
+    pinMode(X_MAX, INPUT);
+    pinMode(Y_MAX, INPUT);
+    pinMode(X_MIN, INPUT);
+    pinMode(Y_MIN, INPUT);
+
+    //připojení elektrmagnetu
+    pinMode(ELL_PIN, OUTPUT);
+    digitalWrite(ELL_PIN, LOW);
+
+    //aktivování motorů
+    stepper_x.begin(RPM, MICROSTEPS);
+    stepper_y.begin(RPM, MICROSTEPS);
+    stepper_x.enable();
+    stepper_y.enable();
+
+
+    Serial.println("INIT DONE");
 
 }
 
@@ -47,9 +89,21 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     Serial.println(move_row);
     #endif
 
+    if(pieceValue(startCell) == 6 && abs(move_column)){
+        addCastlingMove(startCell, endCell);
+        return;
+    }else if(pieceValue(endCell) == 0 && pieceValue(startCell) == 1 && abs(startCell.x - endCell.x) == 1){
+        addEnPassantMove(startCell, endCell, actual_turn);
+        return;
+    }
+
+    //posunutí figurky
+    board[endCell.y][endCell.x - 1] = board[startCell.y][startCell.x - 1];
+    board[startCell.y][startCell.x - 1] = 0;
+
 
     command move_type = selectMoveType(startCell, endCell);
-    Serial.print("Vybraný typ pohybu: ");
+    Serial.print("Vybrany typ pohybu: ");
     Serial.println(move_type);
 
     //při různých typech pohybu správně nastavuje pohybuvý vektor
@@ -429,7 +483,7 @@ void MotorMovement::clearMoves(){
 
 void MotorMovement::printMoves(){
     //vypsání všech pohybů z vektoru pohybů
-    Serial.print("Počet pohybu: ");
+    Serial.print("Pocet pohybu: ");
     Serial.println(moves.size());
     Serial.println("Pohyby motoru");
 
@@ -443,13 +497,12 @@ void MotorMovement::printMoves(){
         Serial.print(" Specialni kod: ");
         Serial.print(moves[i].special_command);
         if(moves[i].special_command == PIECE_OUT){
-            Serial.print(" Vyhození figurky s pozicí: ");
+            Serial.print(" Vyhození figurky s pozici: ");
             Serial.print(sel_piece_post);
         }
         Serial.println();
     }
 }
-
 
 int MotorMovement::pieceValue(cellPos _position){
     return board[_position.y][_position.x-1];
@@ -471,16 +524,6 @@ void MotorMovement::printBoard(){
         }
         Serial.println();
     }
-}
-
-void MotorMovement::returnToHome(){
-    //vyčistí vektor pohybu
-    clearMoves();
-    //vypočítej cestu do výchozí pozice
-    
-
-    /* SAMOTNÉ PROVEDENÍ POHYBU - ToDo  */
-
 }
 
 void MotorMovement::setUp(){
@@ -655,4 +698,43 @@ void MotorMovement::addEnPassantMove(cellPos _start, cellPos _end, int _pieceOut
     pieceMoveAdder(_move_row, _move_column, DIA_MOVE);
 
     act_cell_pos = _end;    //zaktualizuje aktuální pozici
+}
+
+void MotorMovement::returnToHome(){
+
+}
+
+void MotorMovement::moveToEndstop(int _XY, int _direction){
+
+    if(_XY == MOTOR_X){   //motor x
+        Serial.println("START MOTOR X");
+        stepper_x.startMove(100 * _direction * MOTOR_STEPS * MICROSTEPS);
+        while(digitalRead(X_MIN) == LOW && digitalRead(X_MAX) == LOW){
+            stepper_x.nextAction();
+        }
+        Serial.print("ENDSTOP REACHED in direction: ");
+        Serial.println(_direction);
+        stepper_x.stop();
+        stepper_x.rotate(90 * ACC_MOTOR_MOVE * _direction * -1);
+    }else if(_XY == MOTOR_Y){   //motor y
+        Serial.println("START MOTOR Y");
+        stepper_y.startMove(100 * _direction * MOTOR_STEPS * MICROSTEPS);
+        while(digitalRead(Y_MIN) == LOW && digitalRead(Y_MAX) == LOW){
+            stepper_y.nextAction();
+        }
+        Serial.print("ENDSTOP REACHED in direction: ");
+        Serial.println(_direction);
+        stepper_y.stop();
+        stepper_y.rotate(202.5 * ACC_MOTOR_MOVE * _direction * -1);
+    }
+
+}
+
+void MotorMovement::setMagnetState(int _state){
+    if(_state == ON){
+        digitalWrite(ELL_PIN, HIGH);
+    }else if(_state == OFF){
+        digitalWrite(ELL_PIN, LOW);
+    }
+    
 }

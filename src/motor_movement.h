@@ -4,12 +4,30 @@
 #include <Arduino.h>
 #include "Vector.h"
 
-#include "A4988.h"
+
+//definice pinů endstopů
+#define X_MAX 32
+#define Y_MAX 33
+#define X_MIN 34
+#define Y_MIN 35
+
+//definice pinu elektromagnetu
+#define ELL_PIN 13
+
+//konstanta pro kalibraci motorů
+#define ACC_MOTOR_MOVE 1
+
 
 
 class MotorMovement{
 
 private:
+
+    #define MOTOR_X 0x00
+    #define MOTOR_Y 0x01
+
+    #define ON 0x02
+    #define OFF 0x03
 
     // rozměry políčka šachovnice
     int cell_x = 40;
@@ -34,6 +52,9 @@ private:
 
     //flag pro braní mimochodem
     bool enPassantFlag = false;
+
+    //kdo je na tahu, 0 - bílá, 1 - černá
+    int actual_turn = 0;
 
     //matice pro ulozeni pozice figurek na sachvnici
     int board[8][8] = {
@@ -136,7 +157,6 @@ public:
     void addMove(moveDec _move);  //přídá pohyb(definovaný pomocí moveDec)
     void printMoves();  //vypíše všechny pohyby do Serial Monitor
 
-    void returnToHome();    //vrátí se na políčko 00
     void setUp();   //zkalibruje motory a dojede na výchozí pozici výchozí pozici
     void doMove(int _startCell, int _endCell);  //nejprve vypočítá a poté provede pohyb
 
@@ -147,9 +167,14 @@ public:
     void addCastlingMove(cellPos _start, cellPos _end);
     void addEnPassantMove(cellPos _start, cellPos _end, int _pieceOutColor);
 
-    cellPos test1 = {3, 4};
-    cellPos test2 = {2, 5};
-    pieceMoves test_move = HORSE;
+
+    void returnToHome();
+
+    void moveToEndstop(int _XY, int _direction);
+
+    void setMagnetState(int _state);
+
+
 
 };
 
