@@ -29,18 +29,22 @@ private:
     #define ON 0x02
     #define OFF 0x03
 
+    const int STEPS_PER_MILIMETER = 5;
+    const double ANGLE_PER_STEP = 1.8;
+    const int ANGLE_PER_MILIMETER = 9;
+
     // rozměry políčka šachovnice
-    int cell_x = 40;
-    int cell_y = 40;
+    int cell_x = 50;
+    int cell_y = 50;
 
     //rozměry políčka pro odklad figurek
     int rest_cell_x = 70;
-    int rest_cell_y = 40;
+    int rest_cell_y = 50;
 
     // směr rotace při pozitivní hodnotě
-    const int X_POSITIVE = 1;
+    const int X_POSITIVE = 0;
     const int Y_POSITIVE = 1;
-    const int X_NEGATIVE = 0;
+    const int X_NEGATIVE = 1;
     const int Y_NEGATIVE = 0;
 
     //výchozí pozice pro motor
@@ -55,6 +59,10 @@ private:
 
     //kdo je na tahu, 0 - bílá, 1 - černá
     int actual_turn = 0;
+
+
+    //pozice motoru 0 - roh / 1 - střed políčka
+    bool motor_cc_position = false;
 
     //matice pro ulozeni pozice figurek na sachvnici
     int board[8][8] = {
@@ -167,6 +175,7 @@ public:
     void addCastlingMove(cellPos _start, cellPos _end);
     void addEnPassantMove(cellPos _start, cellPos _end, int _pieceOutColor);
 
+    double calculateAngle(int _milimeters); //vypočítá úhel posunu motorů
 
     void returnToHome();
 
@@ -174,7 +183,12 @@ public:
 
     void setMagnetState(int _state);
 
+    void moveCorToCen(int _dir);    //pohyb z rohu do středu a naopak -> 1 - do středu, -1 - do rohu
+    void moveMotorEStop(double _angle, int _dir, int _motor);   //rotovat s motory a zaragovat na případný endstop
+    void doMotorMove(); // vykoná kroky z vektoru pohybů
+    void doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y);
 
+    void test(int angle);
 
 };
 

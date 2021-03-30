@@ -17,22 +17,18 @@ MotorMovement motor_move;
 
 String command = "";
 
+void  readCommand();
+
 void setup() {
   Serial.begin(9600);
 
   Serial.print("Probehlo...");
 
   motor_move.setBoard(board);   //nastaví původní šachovnici
-  motor_move.printBoard();
+  //motor_move.printBoard();
+  //motor_move.test(900);
 
   Serial.println("Zadejte command: ");
-
-  motor_move.moveToEndstop(MOTOR_X, 1);
-  motor_move.moveToEndstop(MOTOR_X, -1);
-  motor_move.moveToEndstop(MOTOR_Y, 1);
-  motor_move.moveToEndstop(MOTOR_Y, -1);
-
-  
 
 }
 
@@ -41,15 +37,22 @@ void loop() {
 
 
   if(Serial.available() > 0){
-    command = Serial.readString();
+    readCommand();
+  }
+
+}
+
+void readCommand(){
+
+  command = Serial.readString();
     String _com = command.substring(0, command.indexOf(' '));
     if(_com == "cpmb"){
       Serial.print("Parametr 1: ");
       String par1 = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 3);
-      Serial.println(par1);
+      Serial.println(par1.toInt());
       Serial.print("Parametr 2: ");
       String par2 = command.substring(command.length() - 2, command.length());
-      Serial.println(par2);
+      Serial.println(par2.toInt());
 
       motor_move.printBoard();
       motor_move.computeCellMovement(par1.toInt(), par2.toInt());
@@ -78,14 +81,39 @@ void loop() {
     }else if(_com == "mst"){
       String _state = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 2);
       int st = _state.toInt();
+      Serial.println(st);
       if(st == 1){
         motor_move.setMagnetState(ON);
+        Serial.println("Magnet zapnut");
       }else if(st == 0){
         motor_move.setMagnetState(OFF);
+        Serial.println("Magnet vypnut");
       }else{
         Serial.println("Nezname parametry!");
       }
+    }else if(_com == "rteh"){
+      Serial.println("Provadim pohyb...");
+      motor_move.moveToEndstop(MOTOR_X, 1);
+      motor_move.moveToEndstop(MOTOR_X, 1);
+      motor_move.moveToEndstop(MOTOR_X, -1);
+      motor_move.moveToEndstop(MOTOR_X, -1);
+      motor_move.moveToEndstop(MOTOR_Y, 1);
+      motor_move.moveToEndstop(MOTOR_Y, 1);
+      motor_move.moveToEndstop(MOTOR_Y, -1);
+      motor_move.moveToEndstop(MOTOR_Y, -1);
+    }else if(_com == "rth"){
+      Serial.println("Provádím pohyb");
+      motor_move.returnToHome();
+    }else if(_com == "mtc"){
+      String _dir = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 2);
+      int dir = _dir.toInt();
+      if(dir == 1){
+        motor_move.moveCorToCen(1);
+      }else if(dir == 0){
+        motor_move.moveCorToCen(-1);
+      }
+    }else if(_com == "dmfv"){
+      motor_move.doMotorMove();
     }
-  }
 
 }
