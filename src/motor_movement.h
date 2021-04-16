@@ -125,6 +125,7 @@ private:
     //pole pro políčka vyhozených figurek
     pieceOutCell pieceOutCells[8];
     int sel_piece_post = -1;    // vybraná pozice pro vyřazenou figurku; default = -1 - není aktivní
+    int piece_out_cor = -1;
 
     //proměnná k ukládání cety koně - pokud se zpracovává cesta pro koně; 0 - provedení v řádku/sloupci počátečního políčka; 1 - provedení v řádku/sloupci o 1 vyšší/nižší; -1 - výchozí
     bool en_horse_move = false;
@@ -186,9 +187,8 @@ public:
     void moveCorToCen(int _dir);    //pohyb z rohu do středu a naopak -> 1 - do středu, -1 - do rohu
     void moveMotorEStop(double _angle, int _dir, int _motor);   //rotovat s motory a zaragovat na případný endstop
     void doMotorMove(); // vykoná kroky z vektoru pohybů
-    void doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y);
-
-    void test(int angle);
+    void doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y);  //provede diagonální pohyb
+    void doPieceOutPos();
 
 };
 

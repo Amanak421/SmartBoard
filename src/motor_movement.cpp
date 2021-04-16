@@ -72,9 +72,13 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     cellPos startCell = decodePos(_startCell);
     cellPos endCell = decodePos(_endCell);
 
+    
+
+
     if(isPieceOutActive(endCell)){      //zkontroluje a popř. vyhodí figurku na cílové pozici
         Serial.println("Vyhazuji figurku...");
         //board[endCell.y][endCell.x - 1] = 0;
+        computeHomeToCellMovement(act_cell_pos, endCell);
         addPieceOutMove(endCell, 0);
     }
     Serial.println("Provadim klasicky tah...");
@@ -309,23 +313,36 @@ bool MotorMovement::checkPath(cellPos _start, cellPos _end, pieceMoves _move){
         int start_cell = min(_start.y, _end.y);
         int end_cell = max(_start.y, _end.y);
 
+        int x_cell_inveter = 1; //bude odečítat pokud se bude pohyb zkoumat po klesajícím x a přičítat pokud po stoupajícím
+
+        if((_start.x < _end.x && _start.y > _end.y) || (_start.x > _end.x && _start.y < _end.y)){   //v těchto případech je potřeba odečítat x
+            x_cell_inveter = -1;
+        }else{
+            x_cell_inveter = 1;
+        }
+
         #ifdef DEBUG
-            Serial.print("Startovní / konečné políčko: ");
+            Serial.print("Startovni / konecne policko: ");
             Serial.print(start_cell);
             Serial.print(" / ");
             Serial.println(end_cell);
         #endif
 
         for(int i = 1; i <= (end_cell - start_cell); i++){
+            Serial.print("Kontrola policek: ");
+            Serial.print(_start.y + i);
+            Serial.print(" / ");
+            Serial.println(_start.x - 1 + i);
             if((_start.y > _end.y) && i == (end_cell - start_cell)){
                 continue;
             }else if((_start.y < _end.y) && i == 1){
                 continue;
             }
-            if(board[_start.y + i][_start.x - 1 + i]){
+            if(board[start_cell + i][(_start.x - 1) + (i * x_cell_inveter)] != 0){
+                Serial.println("Kontrola selhala...");
                 return false;
             }
-        }
+        } 
         break;
         }
 
@@ -618,6 +635,8 @@ void MotorMovement::addPieceOutMove(cellPos _cell, int _pieceColor){
         correction = 0;
     }
 
+    piece_out_cor = correction;
+
     //výpočet početu políček, o které je nutné se posunout
     int out_move_row = _cell.y - pieceOutCells[selectedPieceOutCell].y - correction;     //přidá korekci - směr nahoru o 1 min
     int out_move_column = _cell.x - pieceOutCells[selectedPieceOutCell].x;
@@ -777,7 +796,7 @@ void MotorMovement::moveCorToCen(int _dir){
         stepper_y.rotate(calculateAngle(cell_y / 2) * ACC_MOTOR_MOVE);
         motor_cc_position = false; //zapamatuje si totu volbu
     }else{
-        Serial.println("Tento pohyb nemůže být proveden!");
+        Serial.println("Tento pohyb nemuze byt proveden!");
         return;
     }
 }
@@ -811,7 +830,7 @@ void MotorMovement::doMotorMove(){
         if(moves[i].special_command == LIN_MOVE){
 
             if(is_piece_at_corner == false && (moves[i-1].special_command != moves[i].special_command || i == 0)){
-                Serial.println("Beru figurku ze středu...");
+                Serial.println("Beru figurku ze stredu...");
                 moveCorToCen(1);
                 delay(2000);
                 setMagnetState(ON);  //zapne magnet
@@ -872,7 +891,7 @@ void MotorMovement::doMotorMove(){
             if(is_magnet_in_center == true && (moves[i-1].special_command != moves[i].special_command || i == moves.size() - 1)){
                 setMagnetState(OFF);
                 delay(250);
-                moveCorToCen(-1);
+                moveCorToCen(-1); 
                 is_magnet_in_center = true;
             }
 
@@ -904,7 +923,7 @@ void MotorMovement::doMotorMove(){
             
             moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
 
-            if(is_magnet_in_center == true && (moves[i-1].special_command != moves[i].special_command || i == moves.size() - 1)){
+            if(is_magnet_in_center == true && (moves[i+1].special_command != moves[i].special_command || i == moves.size() - 1)){
                 setMagnetState(OFF);
                 delay(250);
                 moveCorToCen(-1);
@@ -912,6 +931,54 @@ void MotorMovement::doMotorMove(){
             }
 
         
+        }else if(moves[i].special_command == PIECE_OUT){
+
+            if(is_magnet_in_center == false && (moves[i-1].special_command != moves[i].special_command || i == 0)){
+                moveCorToCen(1);
+                setMagnetState(ON);
+                delay(250);
+                is_magnet_in_center = false;
+                moveCorToCen(-1);
+            }
+
+            Serial.print("Provadim pohyb s motorem: ");
+            Serial.print(moves[i].motor);
+            Serial.print(" o pocet policek: ");
+            Serial.print(moves[i].cells);
+            Serial.print(" coz je uhel: ");
+            Serial.print(calculateAngle((cell_x * (moves[i].cells - 1)) + rest_cell_x));
+            Serial.print(" ve smeru: ");
+            Serial.println(moves[i].dir);
+
+            if(moves[i].motor == X_MOTOR){
+                moveMotorEStop(calculateAngle((cell_x * (moves[i].cells - 1)) + rest_cell_x), moves[i].dir, moves[i].motor);
+            }else{
+                moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
+            }
+
+            /* POHYB NA PŘÍSLUČNOU POZICI NA VYHAZOVACÍM POLÍČKU    */
+            if((moves[i+1].special_command != moves[i].special_command || i == moves.size() - 1)){
+                doPieceOutPos();
+            }
+
+
+        }else if(moves[i].special_command == RET_PIECE_OUT){
+
+            Serial.print("Provadim pohyb s motorem: ");
+            Serial.print(moves[i].motor);
+            Serial.print(" o pocet policek: ");
+            Serial.print(moves[i].cells);
+            Serial.print(" coz je uhel: ");
+            Serial.print(calculateAngle((cell_x * (moves[i].cells - 1)) + rest_cell_x));
+            Serial.print(" ve smeru: ");
+            Serial.println(moves[i].dir);
+
+            if(moves[i].motor == X_MOTOR){
+                moveMotorEStop(calculateAngle((cell_x * (moves[i].cells - 1)) + rest_cell_x), moves[i].dir, moves[i].motor);
+            }else{
+                moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
+            }
+
         }else if(moves[i].special_command == BOTH){
             setMagnetState(OFF);  //vypne magnet
 
@@ -938,6 +1005,55 @@ void MotorMovement::doMotorMove(){
 
 }
 
+void MotorMovement::doPieceOutPos(){
+    switch (sel_piece_post)
+    {
+    case 0:
+        moveMotorEStop(calculateAngle((3 * rest_cell_x) / 4), 1, X_MOTOR);
+        moveMotorEStop(calculateAngle((3 * rest_cell_y) / 4), 1, Y_MOTOR);
+        setMagnetState(OFF);
+        delay(50);
+        Serial.println("Vracim se na pozici");
+        moveMotorEStop(calculateAngle((3 * rest_cell_x) / 4), 0, X_MOTOR);
+        moveMotorEStop(calculateAngle((3 * rest_cell_y) / 4), 0, Y_MOTOR);
+        break;
+
+    case 1:
+        moveMotorEStop(calculateAngle(rest_cell_x / 4), 1, X_MOTOR);
+        moveMotorEStop(calculateAngle((3 * rest_cell_y) / 4), 1, Y_MOTOR);
+        setMagnetState(OFF);
+        delay(50);
+        Serial.println("Vracim se na pozici");
+        moveMotorEStop(calculateAngle(rest_cell_x / 4), 0, X_MOTOR);
+        moveMotorEStop(calculateAngle((3 * rest_cell_y) / 4), 0, Y_MOTOR);
+        break;
+
+    case 2:
+        moveMotorEStop(calculateAngle((3 * rest_cell_x) / 4), 1, X_MOTOR);
+        moveMotorEStop(calculateAngle(rest_cell_y / 4), 1, Y_MOTOR);
+        setMagnetState(OFF);
+        delay(50);
+        Serial.println("Vracim se na pozici");
+        moveMotorEStop(calculateAngle((3 * rest_cell_x) / 4), 0, X_MOTOR);
+        moveMotorEStop(calculateAngle(rest_cell_y / 4), 0, Y_MOTOR);
+        break;
+
+    case 3:
+        moveMotorEStop(calculateAngle(rest_cell_x / 4), 1, X_MOTOR);
+        moveMotorEStop(calculateAngle(rest_cell_y / 4), 1, Y_MOTOR);
+        setMagnetState(OFF);
+        delay(50);
+        Serial.println("Vracim se na pozici");
+        moveMotorEStop(calculateAngle(rest_cell_x / 4), 0, X_MOTOR);
+        moveMotorEStop(calculateAngle(rest_cell_y / 4), 0, Y_MOTOR);
+        break;
+    
+    default:
+        break;
+    }
+
+}
+
 void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y){
 
     int dir_x = 0;
@@ -956,8 +1072,4 @@ void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x,
 
     diaMoveControl.rotate(_angle_x * dir_x, _angle_y * dir_y);
 
-}
-
-void MotorMovement::test(int angle){
-    stepper_x.rotate(angle);
 }
