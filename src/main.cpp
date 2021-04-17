@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "motor_movement.h"
+#include "servercom.h"
 
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
@@ -15,7 +16,21 @@
 
 MotorMovement motor_move;
 
+ServerCom servercom;
+
+char ssid[] = "andrlink";
+char password[] = "1kub157201";
+
 String command = "";
+
+int on_move = 0;
+int player_color = 1;
+String player_color_str = "b";
+
+const int CHECK_DELAY = 5000;
+unsigned long last_activation = 0;
+
+bool game_started = false;
 
 void  readCommand();
 
@@ -25,8 +40,9 @@ void setup() {
   Serial.print("Probehlo...");
 
   motor_move.setBoard(board);   //nastaví původní šachovnici
-  //motor_move.printBoard();
-  //motor_move.test(900);
+
+  servercom.begin(ssid, password); //připojí se k síti
+
 
   Serial.println("Zadejte command: ");
 
@@ -38,6 +54,30 @@ void loop() {
 
   if(Serial.available() > 0){
     readCommand();
+  }
+
+  if(millis() - last_activation > CHECK_DELAY && game_started){
+
+    if(on_move != player_color){
+
+      if(servercom.httpGetLastOnMove() != player_color_str){
+          //je potřeba získat šachovnici
+          servercom.encodeJson(servercom.httpGetChessboard());
+          servercom.decodeChessstring(servercom.chessstring);
+          servercom.printBoard();
+          motor_move.doMoveFromServer(servercom.retLastMove());
+          on_move = 1;
+      }else{
+        Serial.println("Druhý hráč ještě neodehrál...");
+      }
+
+    }else{
+      Serial.println("Jsi na tahu update namá cenu...");
+    }
+
+    /*kotrola databáze*/
+    last_activation = millis();
+
   }
 
 }
@@ -114,6 +154,43 @@ void readCommand(){
       }
     }else if(_com == "dmfv"){
       motor_move.doMotorMove();
+    }else if(_com == "sgid"){
+      String _game_id = command.substring(command.indexOf(' ') + 1, command.length());
+      int game_id = _game_id.toInt();
+      Serial.print("Herni id nastaveno na: ");
+      Serial.println(game_id);
+
+      servercom.setGameId(game_id);
+      game_started = true;
+
+    }else if(_com == "opm"){
+
+      if(on_move == player_color){
+
+        Serial.print("Parametr 1: ");
+        String par1 = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 3);
+        Serial.println(par1.toInt());
+        Serial.print("Parametr 2: ");
+        String par2 = command.substring(command.length() - 2, command.length());
+        Serial.println(par2.toInt());
+
+        servercom.printBoard();
+
+        motor_move.doMoveWithoutMotors(par1.toInt(), par2.toInt());
+        servercom.doMove(par1.toInt(), par2.toInt());
+        String last_move = par1 + "_" + par2;
+        servercom.httpSend(servercom.encodeChessstring(), player_color_str, last_move, motor_move.last_special_move);
+        motor_move.printBoard();
+        servercom.printBoard();
+        Serial.println(servercom.encodeChessstring());
+
+        on_move = 0;
+
+      }else{
+        Serial.println("Nejsi na tahu...");
+      }
+
+      
     }
 
 }

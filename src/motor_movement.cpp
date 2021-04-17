@@ -67,6 +67,7 @@ MotorMovement::MotorMovement(){
 void MotorMovement::computeCellMovement(int _startCell, int _endCell){
 
     clearMoves();   //vyčistí vektor s pohyby
+    last_special_move = "none";
 
     // vytvoření počátečního a koncového políčka a rozložení hodnot na x-sloupce a y-řádky
     cellPos startCell = decodePos(_startCell);
@@ -101,12 +102,16 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     Serial.println(move_row);
     #endif
 
-    if(pieceValue(startCell) == 6 && abs(move_column)){
+    if(pieceValue(startCell) == 6 && abs(move_column) > 1){
         addCastlingMove(startCell, endCell);
+        last_special_move = "cast";
         return;
     }else if(pieceValue(endCell) == 0 && pieceValue(startCell) == 1 && abs(startCell.x - endCell.x) == 1){
         addEnPassantMove(startCell, endCell, actual_turn);
+        last_special_move = "enpas";
         return;
+    }else{
+        last_special_move = "none";
     }
 
 
@@ -739,6 +744,7 @@ void MotorMovement::returnToHome(){
     moveToEndstop(MOTOR_Y, 1);
     delay(100);
     stepper_x.rotate(calculateAngle(rest_cell_x) * ACC_MOTOR_MOVE);
+    act_cell_pos = {1, 0};
 
 }
 
@@ -1071,5 +1077,36 @@ void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x,
     }
 
     diaMoveControl.rotate(_angle_x * dir_x, _angle_y * dir_y);
+
+}
+
+void MotorMovement::doMoveFromServer(String _move){
+
+    String from_str = _move.substring(0, 2);
+    int from = from_str.toInt() + 1;
+    String to_str = _move.substring(3);
+    int to = to_str.toInt() + 1;
+
+    Serial.print("Z: ");
+    Serial.println(from);
+    Serial.print("NA: ");
+    Serial.println(to);
+
+    computeCellMovement(from, to);
+    doMotorMove();
+    returnToHome();
+
+}
+
+void MotorMovement::doMoveWithoutMotors(int _from, int _to){
+
+    int from_column = _from % 10;
+    int from_row = (_from - (_from % 10)) / 10;
+
+    int to_column = _to % 10;
+    int to_row = (_to - (_to % 10)) / 10;
+
+    board[to_row][to_column-1] = board[from_row][from_column-1];
+    board[from_row][from_column-1] = 0;
 
 }

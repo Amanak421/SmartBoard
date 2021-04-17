@@ -190,6 +190,11 @@ public:
     void doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y);  //provede diagonální pohyb
     void doPieceOutPos();
 
+    void doMoveFromServer(String _move);
+    void doMoveWithoutMotors(int _from, int _to);
+
+    String last_special_move = "none";
+
 };
 
 #endif
