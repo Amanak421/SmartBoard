@@ -73,14 +73,14 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     cellPos startCell = decodePos(_startCell);
     cellPos endCell = decodePos(_endCell);
 
-    
 
+    bool piece_out_done = false;
 
     if(isPieceOutActive(endCell)){      //zkontroluje a popř. vyhodí figurku na cílové pozici
         Serial.println("Vyhazuji figurku...");
-        //board[endCell.y][endCell.x - 1] = 0;
-        computeHomeToCellMovement(act_cell_pos, endCell);
+        computeHomeToCellMovement(act_cell_pos, endCell); // vypočítá cestu k vyhazované figurce
         addPieceOutMove(endCell, 0);
+        piece_out_done = true;
     }
     Serial.println("Provadim klasicky tah...");
 
@@ -103,15 +103,14 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     #endif
 
     if(pieceValue(startCell) == 6 && abs(move_column) > 1){
+        Serial.println("Pridavam rosadu...");
         addCastlingMove(startCell, endCell);
-        last_special_move = "cast";
         return;
-    }else if(pieceValue(endCell) == 0 && pieceValue(startCell) == 1 && abs(startCell.x - endCell.x) == 1){
+    }else if(pieceValue(endCell) == 0 && pieceValue(startCell) == 1 && abs(startCell.x - endCell.x) == 1 && !piece_out_done){
+        printBoard();
+        Serial.println("Pridavam en pass...");
         addEnPassantMove(startCell, endCell, actual_turn);
-        last_special_move = "enpas";
         return;
-    }else{
-        last_special_move = "none";
     }
 
 
@@ -120,8 +119,11 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
     Serial.println(move_type);
 
     //posunutí figurky
-    board[endCell.y][endCell.x - 1] = board[startCell.y][startCell.x - 1];
-    board[startCell.y][startCell.x - 1] = 0;
+    if(game_mode == ROBOT){
+        board[endCell.y][endCell.x - 1] = board[startCell.y][startCell.x - 1];
+        board[startCell.y][startCell.x - 1] = 0;
+    }
+    
 
 
     //při různých typech pohybu správně nastavuje pohybuvý vektor
@@ -197,7 +199,7 @@ void MotorMovement::computeCellMovement(int _startCell, int _endCell){
 
 }
 
-void MotorMovement::computeHomeToCellMovement(cellPos _startCell, cellPos _endCell){
+void MotorMovement::computeHomeToCellMovement(cellPos _startCell, cellPos _endCell){    //HOTOVO
 
 
     //výpočet početu políček, o které je nutné se posunout
@@ -250,7 +252,7 @@ void MotorMovement::addHorseMove(int _moveCell_a, int _moveCell_b, motorPick _mo
     }
 }
 
-MotorMovement::cellPos MotorMovement::decodePos(int _value){
+MotorMovement::cellPos MotorMovement::decodePos(int _value){    //HOTOVO
     cellPos cell;
 
     // rozložení čísla na sloupce - x a řádky - y
@@ -438,10 +440,6 @@ bool MotorMovement::checkPath(cellPos _start, cellPos _end, pieceMoves _move){
 }
 
 MotorMovement::command MotorMovement::selectMoveType(cellPos _start, cellPos _end){
-
-    /*Serial.print("x souradnice");
-    Serial.print(_start.x);
-    Serial.println(_end.x);*/
     
     switch (pieceValue(_start))
     {
@@ -504,7 +502,7 @@ MotorMovement::command MotorMovement::selectMoveType(cellPos _start, cellPos _en
 }
 
 void MotorMovement::addMove(moveDec _move){
-    Serial.println("Přidávám pohyb...");
+    Serial.println("Pridavam pohyb...");
     moves.push_back(_move); //přidání pohybu do vektoru pohybů
 }
 
@@ -512,7 +510,7 @@ void MotorMovement::clearMoves(){
     moves.clear();  //vyčistí pole
 }
 
-void MotorMovement::printMoves(){
+void MotorMovement::printMoves(){   //HOTOVO
     //vypsání všech pohybů z vektoru pohybů
     Serial.print("Pocet pohybu: ");
     Serial.println(moves.size());
@@ -535,11 +533,11 @@ void MotorMovement::printMoves(){
     }
 }
 
-int MotorMovement::pieceValue(cellPos _position){
+int MotorMovement::pieceValue(cellPos _position){   //HOTOVO
     return board[_position.y][_position.x-1];
 }
 
-void MotorMovement::setBoard(int _board[8][8]){
+void MotorMovement::setBoard(int _board[8][8]){     //HOTOVO
     for(int i = 0; i < 8; i++){
         for(int k = 0; k < 8; k++){
             board[i][k] = _board[i][k];
@@ -547,7 +545,7 @@ void MotorMovement::setBoard(int _board[8][8]){
     }
 }
 
-void MotorMovement::printBoard(){
+void MotorMovement::printBoard(){       //HOTOVO
     for(int i = 0; i < 8; i++){
         for(int k = 0; k < 8; k++){
             Serial.print(board[i][k]);
@@ -575,7 +573,7 @@ void MotorMovement::doMove(int _startCell, int _endCell){
     /*  SAMOTNÉ PROVEDENÍ TAHU  - ToDo */
 }
 
-bool MotorMovement::isPieceOutActive(cellPos _cell){
+bool MotorMovement::isPieceOutActive(cellPos _cell){    //HOTOVO
     if(board[_cell.y][_cell.x - 1] != 0){
         return true;
     }
@@ -628,6 +626,7 @@ void MotorMovement::addPieceOutMove(cellPos _cell, int _pieceColor){
     }
     
 
+    Serial.println("Vybrané místo pro figurku: ");
     Serial.println(selectedPieceOutCell);
 
     //uložení vybraného místa pro figurku
@@ -695,10 +694,15 @@ void MotorMovement::addCastlingMove(cellPos _start, cellPos _end){
         pieceMoveAdder(0, _end.x - 1, BOTH); //cesta k věži
 
         int c_move_row = 0;
-        int c_move_column = 4;
+        int c_move_column = -3;
         pieceMoveAdder(c_move_row, c_move_column, LIN_MOVE); //tah věží
 
         act_cell_pos = {4, _start.y};   //zaktualizuje aktuální pozici
+
+        board[_end.y][_end.x - 1] = 6;
+        board[_end.y][3] = 2;
+        board[_end.y][0] = 0;
+        board[_start.y][_start.x - 1] = 0;
 
     }else if(_start.x == 5 && _end.x == 7){
 
@@ -714,7 +718,13 @@ void MotorMovement::addCastlingMove(cellPos _start, cellPos _end){
 
         act_cell_pos = {6, _start.y};   //zaktualizuje aktuální pozici
 
+        board[_end.y][_end.x - 1] = 6;
+        board[_end.y][5] = 2;
+        board[_end.y][7] = 0;
+        board[_start.y][_start.x - 1] = 0;
+
     }
+
 }
 
 void MotorMovement::addEnPassantMove(cellPos _start, cellPos _end, int _pieceOutColor){
@@ -748,7 +758,7 @@ void MotorMovement::returnToHome(){
 
 }
 
-void MotorMovement::moveToEndstop(int _XY, int _direction){
+void MotorMovement::moveToEndstop(int _XY, int _direction){     //MOŽNO PŘIDAT OCHRANU POMOCÍ ENDSTOPŮ - HOTOVO
 
     if(_XY == MOTOR_X){   //motor x
         Serial.println("START MOTOR X");
@@ -774,7 +784,7 @@ void MotorMovement::moveToEndstop(int _XY, int _direction){
 
 }
 
-void MotorMovement::setMagnetState(int _state){
+void MotorMovement::setMagnetState(int _state){     //HOTOVO
     if(_state == ON){
         digitalWrite(ELL_PIN, HIGH);
     }else if(_state == OFF){
@@ -785,12 +795,12 @@ void MotorMovement::setMagnetState(int _state){
     
 }
 
-double MotorMovement::calculateAngle(int _milimeters){
+double MotorMovement::calculateAngle(int _milimeters){  //HOTOVO
     int _value = _milimeters * ANGLE_PER_MILIMETER;
     return _value;
 }
 
-void MotorMovement::moveCorToCen(int _dir){
+void MotorMovement::moveCorToCen(int _dir){     //HOTOVO
     if(_dir == 1 && motor_cc_position == false){
         //provede pohyb na střed políčka
         stepper_x.rotate(calculateAngle(cell_x / 2) * ACC_MOTOR_MOVE);
@@ -806,7 +816,8 @@ void MotorMovement::moveCorToCen(int _dir){
         return;
     }
 }
-void MotorMovement::moveMotorEStop(double _angle, int _dir, int _motor){
+
+void MotorMovement::moveMotorEStop(double _angle, int _dir, int _motor){        //HOTOVO
     int dir = 0;
 
     if(_dir == 0){
@@ -857,10 +868,9 @@ void MotorMovement::doMotorMove(){
 
             if(moves[i].cells == 0){
                 Serial.println("Pohyb preskocen...");
-                continue;
+            }else{
+                moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
             }
-
-            moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
 
             if(is_piece_at_corner != false && (moves[i+1].special_command != moves[i].special_command || i == moves.size() - 1)){
                 Serial.println("Vracim figurku do stredu...");
@@ -887,12 +897,12 @@ void MotorMovement::doMotorMove(){
             }
 
             if(dia_skip_move){
-                continue;
                 dia_skip_move = false;
+            }else{
+                doDiagonalMove(calculateAngle(cell_x * moves[i].cells), calculateAngle(cell_x * moves[i+1].cells), moves[i].dir, moves[i+1].dir);
+                dia_skip_move = true;
             }
-
-            doDiagonalMove(calculateAngle(cell_x * moves[i].cells), calculateAngle(cell_x * moves[i+1].cells), moves[i].dir, moves[i+1].dir);
-            dia_skip_move = true;
+            
 
             if(is_magnet_in_center == true && (moves[i-1].special_command != moves[i].special_command || i == moves.size() - 1)){
                 setMagnetState(OFF);
@@ -923,11 +933,9 @@ void MotorMovement::doMotorMove(){
 
             if(moves[i].cells == 0){
                 Serial.println("Pohyb preskocen...");
-                continue;
+            }else{
+                moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
             }
-
-            
-            moveMotorEStop(calculateAngle(cell_x * moves[i].cells), moves[i].dir, moves[i].motor);
 
             if(is_magnet_in_center == true && (moves[i+1].special_command != moves[i].special_command || i == moves.size() - 1)){
                 setMagnetState(OFF);
@@ -1011,7 +1019,7 @@ void MotorMovement::doMotorMove(){
 
 }
 
-void MotorMovement::doPieceOutPos(){
+void MotorMovement::doPieceOutPos(){        //HOTOVO
     switch (sel_piece_post)
     {
     case 0:
@@ -1060,7 +1068,7 @@ void MotorMovement::doPieceOutPos(){
 
 }
 
-void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y){
+void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x, int _dir_y){       //HOTOVO
 
     int dir_x = 0;
     if(_dir_x == 0){
@@ -1082,10 +1090,25 @@ void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x,
 
 void MotorMovement::doMoveFromServer(String _move){
 
+    Serial.println(_move);
+
     String from_str = _move.substring(0, 2);
-    int from = from_str.toInt() + 1;
+    int from = from_str.toInt();
     String to_str = _move.substring(3);
-    int to = to_str.toInt() + 1;
+    int to = to_str.toInt();
+
+    if(reverse){
+
+        int from_x = from % 10;
+        int to_x = to % 10;
+
+        from = (70 + from_x*2) - from;
+        to = (70 + to_x*2) - to;
+
+    }
+
+    from += 1;
+    to += 1;
 
     Serial.print("Z: ");
     Serial.println(from);
@@ -1093,6 +1116,7 @@ void MotorMovement::doMoveFromServer(String _move){
     Serial.println(to);
 
     computeCellMovement(from, to);
+    printMoves();
     doMotorMove();
     returnToHome();
 
@@ -1109,4 +1133,67 @@ void MotorMovement::doMoveWithoutMotors(int _from, int _to){
     board[to_row][to_column-1] = board[from_row][from_column-1];
     board[from_row][from_column-1] = 0;
 
+}
+
+void MotorMovement::setReverse(bool _reverse){
+    reverse = _reverse;
+}
+
+void MotorMovement::setGameMode(int _gameMode){
+    game_mode = _gameMode;
+}
+
+void MotorMovement::doSpecialMoveWithouMotors(int _from, int _to, String _spec){
+
+    if(reverse){
+        int _from_x = _from % 10;
+        int _to_x = _to % 10;
+
+        _from = (70 + _from_x*2) - _from;
+        _to = (70 + _to_x*2) - _to;
+    }
+
+    int from_column = _from % 10;
+    int from_row = (_from - (_from % 10)) / 10;
+
+    int to_column = _to % 10;
+    int to_row = (_to - (_to % 10)) / 10;
+
+    if(_spec == "castk"){
+        board[to_row][to_column - 1] = 6;
+        board[to_row][5] = 2;
+        board[to_row][7] = 0;
+        board[from_row][from_column - 1] = 0;
+    }else if(_spec == "castq"){
+        board[to_row][to_column - 1] = 6;
+        board[to_row][3] = 2;
+        board[to_row][0] = 0;
+        board[from_row][from_column - 1] = 0;
+    }else if(_spec == "ennpass"){
+
+        int move_cell = from_column - to_column;
+
+        if(move_cell > 0){  //pohneme na levou stranu
+        board[from_row][from_column - 1] = 0;
+        board[to_row][to_column] = board[from_row][from_column];
+        board[from_row][from_column] = 0;
+        }else{      //pohneme na pravou stranu
+        board[from_row][from_column + 1] = 0;
+        board[to_row][to_column] = board[from_row][from_column];
+        board[from_row][from_column] = 0;
+        }
+
+    }else if(_spec == "exchd"){
+        board[from_row][from_column] = 0;
+        board[to_row][to_column] = 5;
+    }else if(_spec == "exchs"){
+        board[from_row][from_column] = 0;
+        board[to_row][to_column] = 4;
+    }else if(_spec == "exchk"){
+        board[from_row][from_column] = 0;
+        board[to_row][to_column] = 3;
+    }else if(_spec == "exchv"){
+        board[from_row][from_column] = 0;
+        board[to_row][to_column] = 2;
+    }
 }

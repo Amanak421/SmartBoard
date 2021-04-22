@@ -19,9 +19,15 @@ private:
 
     String last_on_move;
 
+    String player_color = "b";
+
     int game_id;
 
     String act_piece_pos[8][8];
+
+    bool reverse = false;
+
+    
 
 
 public:
@@ -42,14 +48,22 @@ public:
     void encodeJson(String _json);
 
     String retLastMove();
+    String retSpecMove();
 
     void doMove(int _from, int _to);
+    void doSpecialMove(int _from, int _to, String _spec);
 
     void httpSend(String _chessstring, String _domove, String _lastmove, String _specmove);
 
     void printBoard();
 
     void setGameId(int _id);
+
+    void setReverse(bool _reverse);
+    void setPlayerColor(String _color);
+
+    int motor_move_board[8][8];
+    void decodeChessBoard();
 
 
 

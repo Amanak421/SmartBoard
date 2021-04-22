@@ -101,14 +101,97 @@ String ServerCom::retLastMove(){
 
 
 void ServerCom::doMove(int _from, int _to){
-    int from_column = _from % 10;
-    int from_row = (_from - (_from % 10)) / 10;
 
-    int to_column = _to % 10;
-    int to_row = (_to - (_to % 10)) / 10;
+  if(reverse){
 
-    act_piece_pos[to_row][to_column - 1] = act_piece_pos[from_row][from_column - 1];
-    act_piece_pos[from_row][from_column - 1] = "n_0";
+    int _from_x = _from % 10;
+    int _to_x = _to % 10;
+
+    _from = (70 + _from_x*2) - _from;
+    _to = (70 + _to_x*2) - _to;
+  }
+
+  int from_column = _from % 10;
+  int from_row = (_from - (_from % 10)) / 10;
+
+  int to_column = _to % 10;
+  int to_row = (_to - (_to % 10)) / 10;
+
+  act_piece_pos[to_row][to_column - 1] = act_piece_pos[from_row][from_column - 1];
+  act_piece_pos[from_row][from_column - 1] = "n_0";
+}
+
+void ServerCom::doSpecialMove(int _from, int _to, String _spec){
+
+  if(reverse){
+
+    int _from_x = _from % 10;
+    int _to_x = _to % 10;
+
+    _from = (70 + _from_x*2) - _from;
+    _to = (70 + _to_x*2) - _to;
+  }
+
+  Serial.print("FROM: ");
+  Serial.println(_from);
+  Serial.print("TO: ");
+  Serial.println(_to);
+
+  int from_column = _from % 10;
+  int from_row = (_from - (_from % 10)) / 10;
+
+  int to_column = _to % 10;
+  int to_row = (_to - (_to % 10)) / 10;
+
+  Serial.print("FROM_COLUMN");
+  Serial.println(from_column);
+  Serial.print("FROM_ROW");
+  Serial.println(from_row);
+  Serial.print("TO_COLUMN");
+  Serial.println(to_column);
+  Serial.print("TO_ROW");
+  Serial.println(to_row);
+
+  if(_spec == "castk"){
+      act_piece_pos[to_row][to_column - 1] = player_color + "_6";
+      act_piece_pos[to_row][5] = player_color + "_2";
+      act_piece_pos[to_row][7] = "n_0";
+      act_piece_pos[to_row][from_column - 1] = "n_0";
+  }else if(_spec == "castq"){
+      act_piece_pos[to_row][to_column - 1] = player_color + "_6";
+      act_piece_pos[to_row][3] = player_color + "_2";
+      act_piece_pos[to_row][0] = "n_0";
+      act_piece_pos[from_row][from_column - 1] = "n_0";
+  }else if(_spec == "ennpass"){
+      int move_cell = from_column - to_column;
+
+      if(move_cell > 0){  //pohneme na levou stranu
+        act_piece_pos[from_row][from_column - 1] = "n_0";
+        act_piece_pos[to_row][to_column] = act_piece_pos[from_row][from_column];
+        act_piece_pos[from_row][from_column] = "n_0";
+      }else{      //pohneme na pravou stranu
+        act_piece_pos[from_row][from_column + 1] = "n_0";
+        act_piece_pos[to_row][to_column] = act_piece_pos[from_row][from_column];
+        act_piece_pos[from_row][from_column] = "n_0";
+      }
+
+  }else if(_spec == "exchd"){
+      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[to_row][to_column] = player_color + "_5";
+  }else if(_spec == "exchs"){
+      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[to_row][to_column] = player_color + "_4";
+  }else if(_spec == "exchk"){
+      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[to_row][to_column] = player_color + "_3";
+  }else if(_spec == "exchv"){
+      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[to_row][to_column] = player_color + "_2";
+  }
+}
+
+void ServerCom::setPlayerColor(String _color){
+  player_color = _color;
 }
 
 void ServerCom::printBoard(){
@@ -140,6 +223,8 @@ void ServerCom::httpSend(String _chessstring, String _domove, String _lastmove, 
   else {
     Serial.print("Error code: ");
     Serial.println(httpResponseCode);
+    delay(300);
+    httpSend(_chessstring, _domove, _lastmove, _specmove);
   }
   // Free resources
   http.end();
@@ -183,10 +268,75 @@ String ServerCom::httpGetLastOnMove(){
     Serial.print("Last on move: ");
     Serial.println(last_on_move);
 
-    return last_on_move;
+    if(last_on_move == nullptr){
+      return "error";
+    }
+
+  return last_on_move;
 
 }
 
 void ServerCom::setGameId(int _id){
   game_id = _id;
+}
+
+void ServerCom::decodeChessBoard(){
+
+    for(int i = 0; i < 8; i++){
+      for(int k = 0; k < 8; k++){
+        String _piece = act_piece_pos[i][k].substring(2);
+        motor_move_board[i][k] = _piece.toInt();
+        Serial.print(motor_move_board[i][k]);
+      }
+      Serial.println();
+    }
+
+    if(reverse){
+
+      int helper_board[8][8] = {{0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0},
+                                {0, 0, 0, 0, 0, 0, 0, 0}};
+
+
+      for(int i = 0; i < 8; i++){
+        for(int k = 0; k < 8; k++){
+          int _help = motor_move_board[i][k];
+          int _curr_index = i*10 + k;
+          int _new_index = (70 + k*2) - _curr_index;
+          //Serial.print("Novy index: ");
+          //Serial.println(_new_index);
+          int _new_k = _new_index % 10;
+          int _new_i = (_new_index - (_new_index % 10)) / 10;
+          /*Serial.print("| ");
+          Serial.print(_new_i);
+          Serial.print(_new_k);*/
+          helper_board[_new_i][_new_k] = _help;
+        }
+      }
+      
+
+      for(int i = 0; i < 8; i++){
+        for(int k = 0; k < 8; k++){
+          motor_move_board[i][k] = helper_board[i][k];
+          Serial.print(helper_board[i][k]);
+        }
+        Serial.println();
+      }
+
+    }
+
+
+}
+
+void ServerCom::setReverse(bool _reverse){
+  reverse = _reverse;
+}
+
+String ServerCom::retSpecMove(){
+  return spec_move;
 }

@@ -29,6 +29,11 @@ private:
     #define ON 0x02
     #define OFF 0x03
 
+    const int ROBOT =  0x03;
+    const int INTERNET =  0x04;
+
+    int game_mode = ROBOT;
+
     const int STEPS_PER_MILIMETER = 5;
     const double ANGLE_PER_STEP = 1.8;
     const int ANGLE_PER_MILIMETER = 9;
@@ -63,6 +68,8 @@ private:
 
     //pozice motoru 0 - roh / 1 - střed políčka
     bool motor_cc_position = false;
+
+    bool reverse = false;       //otáčí šachovnici pro protihráče
 
     //matice pro ulozeni pozice figurek na sachvnici
     int board[8][8] = {
@@ -192,6 +199,11 @@ public:
 
     void doMoveFromServer(String _move);
     void doMoveWithoutMotors(int _from, int _to);
+    void doSpecialMoveWithouMotors(int _from, int _to, String _spec);
+
+    void setReverse(bool _reverse);
+
+    void setGameMode(int _gameMode);
 
     String last_special_move = "none";
 

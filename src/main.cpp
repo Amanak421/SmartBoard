@@ -60,12 +60,87 @@ void loop() {
 
     if(on_move != player_color){
 
-      if(servercom.httpGetLastOnMove() != player_color_str){
+      if(servercom.httpGetLastOnMove() != player_color_str && servercom.httpGetLastOnMove() != "error"){
           //je potřeba získat šachovnici
+          motor_move.printBoard();
           servercom.encodeJson(servercom.httpGetChessboard());
           servercom.decodeChessstring(servercom.chessstring);
           servercom.printBoard();
           motor_move.doMoveFromServer(servercom.retLastMove());
+          servercom.decodeChessBoard();
+          int helper_board[8][8];
+          for(int i = 0; i < 8; i++){
+            for(int k = 0; k < 8; k++){
+              helper_board[i][k] = servercom.motor_move_board[i][k];
+            }
+          }
+          motor_move.setBoard(helper_board);
+          motor_move.printBoard();
+          if(servercom.retSpecMove() != "none" || servercom.retSpecMove() != ""){
+
+            if(servercom.retSpecMove() == "exchd"){
+                Serial.println("Vymente prave posunuteho pesce za damu...");
+                Serial.println("Potvrdte napsanim 'OK' ");
+                bool is_exch_completed = false;
+                while(!is_exch_completed){
+                  if(Serial.available() > 0){
+                    String _ok = Serial.readString();
+                    if(_ok == "OK"){
+                      is_exch_completed = true;
+                    }else{
+                      Serial.println("Nejprve potvrdte provedenou vymenu!!!");
+                    }
+                  }
+                }
+            }else if(servercom.retSpecMove() == "exchs"){
+              Serial.println("Vymente prave posunuteho pesce za strelce...");
+                Serial.println("Potvrdte napsanim 'OK' ");
+                bool is_exch_completed = false;
+                while(!is_exch_completed){
+                  if(Serial.available() > 0){
+                    String _ok = Serial.readString();
+                    if(_ok == "OK"){
+                      is_exch_completed = true;
+                    }else{
+                      Serial.println("Nejprve potvrdte provedenou vymenu!!!");
+                    }
+                  }
+                }
+
+            }else if(servercom.retSpecMove() == "exchk"){
+              Serial.println("Vymente prave posunuteho pesce za kone...");
+                Serial.println("Potvrdte napsanim 'OK' ");
+                bool is_exch_completed = false;
+                while(!is_exch_completed){
+                  if(Serial.available() > 0){
+                    String _ok = Serial.readString();
+                    if(_ok == "OK"){
+                      is_exch_completed = true;
+                    }else{
+                      Serial.println("Nejprve potvrdte provedenou vymenu!!!");
+                    }
+                  }
+                }
+              
+            }else if(servercom.retSpecMove() == "exchv"){
+
+              Serial.println("Vymente prave posunuteho pesce za vez...");
+                Serial.println("Potvrdte napsanim 'OK' ");
+                bool is_exch_completed = false;
+                while(!is_exch_completed){
+                  if(Serial.available() > 0){
+                    String _ok = Serial.readString();
+                    if(_ok == "OK"){
+                      is_exch_completed = true;
+                    }else{
+                      Serial.println("Nejprve potvrdte provedenou vymenu!!!");
+                    }
+                  }
+                }
+              
+            }
+
+          }
           on_move = 1;
       }else{
         Serial.println("Druhý hráč ještě neodehrál...");
@@ -179,7 +254,7 @@ void readCommand(){
         motor_move.doMoveWithoutMotors(par1.toInt(), par2.toInt());
         servercom.doMove(par1.toInt(), par2.toInt());
         String last_move = par1 + "_" + par2;
-        servercom.httpSend(servercom.encodeChessstring(), player_color_str, last_move, motor_move.last_special_move);
+        servercom.httpSend(servercom.encodeChessstring(), player_color_str, last_move, "none");
         motor_move.printBoard();
         servercom.printBoard();
         Serial.println(servercom.encodeChessstring());
@@ -191,6 +266,37 @@ void readCommand(){
       }
 
       
+    }else if(_com == "str"){
+      String _state = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 2);
+      int state = _state.toInt();
+      motor_move.setReverse(state);
+      servercom.setReverse(state);
+      Serial.print("Reverse nataveno na: ");
+      Serial.println(state);
+
+    }else if(_com == "opms"){
+
+      Serial.print("Parametr 1: ");
+      String par1 = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 3);
+      Serial.println(par1);
+      Serial.print("Parametr 2: ");
+      String par2 = command.substring(command.indexOf(' ') + 4, command.lastIndexOf(' '));
+      Serial.println(par2);
+      Serial.print("Parametr 3: ");
+      String par3 = command.substring(command.lastIndexOf(' ') + 1);
+      Serial.println(par3);
+
+      int from = par1.toInt();
+      int to = par2.toInt();
+
+      motor_move.doSpecialMoveWithouMotors(from, to, par3);
+      servercom.doSpecialMove(from, to, par2);
+      String last_move = par1 + "_" + par2;
+      servercom.httpSend(servercom.encodeChessstring(), player_color_str, last_move, par3);
+      motor_move.printBoard();
+      servercom.printBoard();
+      Serial.println(servercom.encodeChessstring());
+
     }
 
 }
