@@ -41,6 +41,8 @@ String ServerCom::httpGetChessboard(){
   else {
     Serial.print("Error code: ");
     Serial.println(httpResponseCode);
+    Serial.println("Opakuji pozadavek...");
+    httpGetChessboard();
   }
   // Free resources
   http.end();
@@ -253,6 +255,8 @@ String ServerCom::httpGetLastOnMove(){
   else {
     Serial.print("Error code: ");
     Serial.println(httpResponseCode);
+    Serial.println("Opakuji pozadavek...");
+    httpGetLastOnMove();
   }
   // Free resources
   http.end();
