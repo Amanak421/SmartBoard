@@ -182,6 +182,27 @@ void loop() {
       motor_move.setBoard(chess_board.num_board);
       on_move = 0;
       instream = "";
+    }else if(_com == "pms"){
+      Serial.print("Parametr 1: ");
+      String par1 = instream.substring(instream.indexOf(' ') + 1, instream.indexOf(' ') + 3);
+      Serial.println(par1);
+      Serial.print("Parametr 2: ");
+      String par2 = instream.substring(instream.indexOf(' ') + 4, instream.lastIndexOf(' '));
+      Serial.println(par2);
+      Serial.print("Parametr 3: ");
+      String par3 = instream.substring(instream.lastIndexOf(' ') + 1);
+      Serial.println(par3);
+
+      int from = par1.toInt();
+      int to = par2.toInt();
+
+      chess_board.doMove(from, to, par3);
+      Serial.println(chess_board.encodeFEN());
+      chess_board.getNextMove(chess_board.encodeFEN());
+      motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
+      motor_move.setBoard(chess_board.num_board);
+      on_move = 0;
+      instream = "";
     }
   }
 
