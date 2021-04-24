@@ -198,6 +198,7 @@ public:
     void doPieceOutPos();
 
     void doMoveFromServer(String _move);
+    void doMoveFromServer(int _from, int _to);
     void doMoveWithoutMotors(int _from, int _to);
     void doSpecialMoveWithouMotors(int _from, int _to, String _spec);
 

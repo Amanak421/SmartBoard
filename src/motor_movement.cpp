@@ -1122,6 +1122,33 @@ void MotorMovement::doMoveFromServer(String _move){
 
 }
 
+void MotorMovement::doMoveFromServer(int _from, int _to){
+
+    if(reverse){
+
+        int from_x = _from % 10;
+        int to_x = _to % 10;
+
+        _from = (70 + from_x*2) - _from;
+        _to = (70 + to_x*2) - _to;
+
+    }
+
+    _from += 1;
+    _to += 1;
+
+    Serial.print("Z: ");
+    Serial.println(_from);
+    Serial.print("NA: ");
+    Serial.println(_to);
+
+    computeCellMovement(_from, _to);
+    printMoves();
+    doMotorMove();
+    returnToHome();
+
+}
+
 void MotorMovement::doMoveWithoutMotors(int _from, int _to){
 
     int from_column = _from % 10;

@@ -3,6 +3,8 @@
 #include "motor_movement.h"
 #include "servercom.h"
 
+#include "chess_board.h"
+
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
       {1, 1, 1, 1, 1, 1, 1, 1},
@@ -18,10 +20,12 @@ MotorMovement motor_move;
 
 ServerCom servercom;
 
+ChessBoard chess_board;
+
 char ssid[] = "andrlink";
 char password[] = "1kub157201";
 
-String command = "";
+String instream = "";
 
 int on_move = 0;
 int player_color = 1;
@@ -32,7 +36,12 @@ unsigned long last_activation = 0;
 
 bool game_started = false;
 
-void  readCommand();
+const int INTERNET = 0;
+const int ENGINE = 1;
+
+int game_mode = -1;
+
+void readCommand(String _command);
 
 void setup() {
   Serial.begin(9600);
@@ -53,10 +62,11 @@ void loop() {
 
 
   if(Serial.available() > 0){
-    readCommand();
+    instream = Serial.readString();
+    readCommand(instream);
   }
 
-  if(millis() - last_activation > CHECK_DELAY && game_started){
+  if(millis() - last_activation > CHECK_DELAY && game_started && game_mode == INTERNET){
 
     if(on_move != player_color){
 
@@ -155,11 +165,31 @@ void loop() {
 
   }
 
+  if(game_mode == ENGINE){
+    String _com = instream.substring(0, instream.indexOf(' '));
+    if(_com == "pm"){
+      Serial.print("Parametr 1: ");
+      String par1 = instream.substring(instream.indexOf(' ') + 1, instream.indexOf(' ') + 3);
+      Serial.println(par1.toInt());
+      Serial.print("Parametr 2: ");
+      String par2 = instream.substring(instream.length() - 2, instream.length());
+      Serial.println(par2.toInt());
+
+      chess_board.doMove(par1.toInt(), par2.toInt());
+      Serial.println(chess_board.encodeFEN());
+      chess_board.getNextMove(chess_board.encodeFEN());
+      motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
+      motor_move.setBoard(chess_board.num_board);
+      on_move = 0;
+      instream = "";
+    }
+  }
+
 }
 
-void readCommand(){
+void readCommand(String _command){
 
-  command = Serial.readString();
+  String command = _command;
     String _com = command.substring(0, command.indexOf(' '));
     if(_com == "cpmb"){
       Serial.print("Parametr 1: ");
@@ -297,6 +327,21 @@ void readCommand(){
       servercom.printBoard();
       Serial.println(servercom.encodeChessstring());
 
+    }/*else if(_com == "pm"){
+      Serial.print("Parametr 1: ");
+      String par1 = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 3);
+      Serial.println(par1.toInt());
+      Serial.print("Parametr 2: ");
+      String par2 = command.substring(command.length() - 2, command.length());
+      Serial.println(par2.toInt());
+
+      chess_board.doMove(par1.toInt(), par2.toInt());
+      Serial.println(chess_board.encodeFEN());
+      chess_board.getNextMove(chess_board.encodeFEN());
+    }*/else if(_com == "stgm"){
+      String _state = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 2);
+      int state = _state.toInt();
+      game_mode = state;
     }
 
 }
