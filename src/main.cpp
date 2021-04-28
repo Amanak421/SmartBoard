@@ -363,6 +363,8 @@ void readCommand(String _command){
       String _state = command.substring(command.indexOf(' ') + 1, command.indexOf(' ') + 2);
       int state = _state.toInt();
       game_mode = state;
+      Serial.print("Herni mod nastaveny na: ");
+      Serial.println(state);
     }
 
 }

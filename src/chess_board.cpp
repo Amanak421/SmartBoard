@@ -65,7 +65,7 @@ void ChessBoard::doMove(int _from, int _to, String _spec){
 
     }else if(_spec == "castq"){
 
-        if(fen_board[from_row][from_column] == 'K'){
+        if(fen_board[from_row][from_column] == 'Q'){
             w_cast_q = false;
         }else{
             b_cast_q = false;
@@ -357,22 +357,41 @@ void ChessBoard::getNextMove(String _fen){
     int _from = 0;
     int _to = 0;
 
-    String str_from = last_best_move.substring(1, 3);
-    String str_to = last_best_move.substring(4);
+    Serial.println(last_best_move);
 
-    String str_from_row= str_from.substring(1);
-    String str_to_row = str_to.substring(1);
+    if(last_best_move.substring(0, 1) == "N"){
+        String str_from = last_best_move.substring(1, 3);
+        String str_to = last_best_move.substring(4);
 
-    _from = letterToInt(str_from.substring(0, 1)) + ( 7 - (str_from_row.toInt() - 1)) * 10;
-    _to = letterToInt(str_to.substring(0, 1)) + ( 7 - (str_to_row.toInt() - 1)) * 10;
+        String str_from_row= str_from.substring(1);
+        String str_to_row = str_to.substring(1);
+
+        _from = letterToInt(str_from.substring(0, 1)) + ( 7 - (str_from_row.toInt() - 1)) * 10;
+        _to = letterToInt(str_to.substring(0, 1)) + ( 7 - (str_to_row.toInt() - 1)) * 10;
+
+        Serial.println(str_from);
+        Serial.println(str_to);
+
+    }else{
+        String str_from = last_best_move.substring(0, 2);
+        String str_to = last_best_move.substring(3);
+
+        String str_from_row= str_from.substring(1);
+        String str_to_row = str_to.substring(1);
+
+        _from = letterToInt(str_from.substring(0, 1)) + ( 7 - (str_from_row.toInt() - 1)) * 10;
+        _to = letterToInt(str_to.substring(0, 1)) + ( 7 - (str_to_row.toInt() - 1)) * 10;
+
+        Serial.println(str_from);
+    Serial.println(str_to);
+
+    }
 
     last_from = _from;
     last_to = _to;
 
     updateNumBoard();
 
-    Serial.println(str_from);
-    Serial.println(str_to);
     Serial.println(_from);
     Serial.println(_to);
 
