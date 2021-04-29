@@ -47,25 +47,25 @@ void ChessBoard::doMove(int _from, int _to, String _spec){
 
     if(_spec == "castk"){
 
-        if(fen_board[from_row][from_column] == 'K'){
+        if(fen_board[from_row][from_column - 1] == 'K'){
             w_cast_k = false;
         }else{
             b_cast_k = false;
         }
 
-        num_board[to_row][to_column - 1] = num_board[from_row][from_column];
+        num_board[to_row][to_column - 1] = num_board[from_row][from_column - 1];
         num_board[to_row][5] = 2;
         num_board[to_row][7] = 0;
         num_board[from_row][from_column - 1] = 0;
 
-        fen_board[to_row][to_column - 1] = fen_board[from_row][from_column];
+        fen_board[to_row][to_column - 1] = fen_board[from_row][from_column - 1];
         fen_board[to_row][5] = fen_board[to_row][0];
         fen_board[to_row][7] = ' ';
         fen_board[from_row][from_column - 1] = ' ';
 
     }else if(_spec == "castq"){
 
-        if(fen_board[from_row][from_column] == 'Q'){
+        if(fen_board[from_row][from_column - 1] == 'Q'){
             w_cast_q = false;
         }else{
             b_cast_q = false;
@@ -76,7 +76,7 @@ void ChessBoard::doMove(int _from, int _to, String _spec){
         num_board[to_row][0] = 0;
         num_board[from_row][from_column - 1] = 0;
 
-        fen_board[to_row][to_column - 1] = fen_board[from_row][from_column];
+        fen_board[to_row][to_column - 1] = fen_board[from_row][from_column - 1];
         fen_board[to_row][3] = fen_board[to_row][0];
         fen_board[to_row][0] = ' ';
         fen_board[from_row][from_column - 1] = ' ';
@@ -359,7 +359,7 @@ void ChessBoard::getNextMove(String _fen){
 
     Serial.println(last_best_move);
 
-    if(last_best_move.substring(0, 1) == "N"){
+    if(last_best_move.length() == 6){
         String str_from = last_best_move.substring(1, 3);
         String str_to = last_best_move.substring(4);
 

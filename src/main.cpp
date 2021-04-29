@@ -63,6 +63,7 @@ void loop() {
 
   if(Serial.available() > 0){
     instream = Serial.readString();
+    instream.trim();
     readCommand(instream);
   }
 
@@ -341,12 +342,14 @@ void readCommand(String _command){
       int to = par2.toInt();
 
       motor_move.doSpecialMoveWithouMotors(from, to, par3);
-      servercom.doSpecialMove(from, to, par2);
+      servercom.doSpecialMove(from, to, par3);
       String last_move = par1 + "_" + par2;
       servercom.httpSend(servercom.encodeChessstring(), player_color_str, last_move, par3);
       motor_move.printBoard();
       servercom.printBoard();
       Serial.println(servercom.encodeChessstring());
+
+      on_move = 0;
 
     }/*else if(_com == "pm"){
       Serial.print("Parametr 1: ");

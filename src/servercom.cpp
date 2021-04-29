@@ -125,6 +125,8 @@ void ServerCom::doMove(int _from, int _to){
 
 void ServerCom::doSpecialMove(int _from, int _to, String _spec){
 
+  _spec.trim();
+
   if(reverse){
 
     int _from_x = _from % 10;
@@ -145,25 +147,29 @@ void ServerCom::doSpecialMove(int _from, int _to, String _spec){
   int to_column = _to % 10;
   int to_row = (_to - (_to % 10)) / 10;
 
-  Serial.print("FROM_COLUMN");
+  Serial.print("FROM_COLUMN ");
   Serial.println(from_column);
-  Serial.print("FROM_ROW");
+  Serial.print("FROM_ROW ");
   Serial.println(from_row);
-  Serial.print("TO_COLUMN");
+  Serial.print("TO_COLUMN ");
   Serial.println(to_column);
-  Serial.print("TO_ROW");
+  Serial.print("TO_ROW ");
   Serial.println(to_row);
+
+  Serial.println(_spec);
 
   if(_spec == "castk"){
       act_piece_pos[to_row][to_column - 1] = player_color + "_6";
       act_piece_pos[to_row][5] = player_color + "_2";
       act_piece_pos[to_row][7] = "n_0";
       act_piece_pos[to_row][from_column - 1] = "n_0";
+      Serial.println("Rosada na stranu krale...");
   }else if(_spec == "castq"){
       act_piece_pos[to_row][to_column - 1] = player_color + "_6";
       act_piece_pos[to_row][3] = player_color + "_2";
       act_piece_pos[to_row][0] = "n_0";
       act_piece_pos[from_row][from_column - 1] = "n_0";
+      Serial.println("Rosada na stranu damy...");
   }else if(_spec == "ennpass"){
       int move_cell = from_column - to_column;
 
@@ -177,18 +183,24 @@ void ServerCom::doSpecialMove(int _from, int _to, String _spec){
         act_piece_pos[from_row][from_column] = "n_0";
       }
 
+      Serial.println("Ennpass...");
+
   }else if(_spec == "exchd"){
       act_piece_pos[from_row][from_column] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_5";
+      Serial.println("Vymena dama");
   }else if(_spec == "exchs"){
       act_piece_pos[from_row][from_column] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_4";
+      Serial.println("Vymena strelec");
   }else if(_spec == "exchk"){
       act_piece_pos[from_row][from_column] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_3";
+      Serial.println("Vymena kun");
   }else if(_spec == "exchv"){
       act_piece_pos[from_row][from_column] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_2";
+      Serial.println("Vymena vez");
   }
 }
 
