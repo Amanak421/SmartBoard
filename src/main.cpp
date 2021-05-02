@@ -4,6 +4,7 @@
 #include "servercom.h"
 
 #include "chess_board.h"
+#include "validate_move.h"
 
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
@@ -21,6 +22,8 @@ MotorMovement motor_move;
 ServerCom servercom;
 
 ChessBoard chess_board;
+
+ValidateMove validmove;
 
 char ssid[] = "andrlink";
 char password[] = "1kub157201";
@@ -52,13 +55,15 @@ void setup() {
 
   servercom.begin(ssid, password); //připojí se k síti
 
+  //validmove.showPossibleMoves(13);
+  /*Serial.print("Mohu provest tah z 64 na 44: ");
+  Serial.println(validmove.validateMove(64, 44));*/
 
   Serial.println("Zadejte command: ");
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
 
   if(Serial.available() > 0){
@@ -176,12 +181,19 @@ void loop() {
       String par2 = instream.substring(instream.length() - 2, instream.length());
       Serial.println(par2.toInt());
 
-      chess_board.doMove(par1.toInt(), par2.toInt());
-      Serial.println(chess_board.encodeFEN());
-      chess_board.getNextMove(chess_board.encodeFEN());
-      motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
-      motor_move.setBoard(chess_board.num_board);
-      on_move = 0;
+
+      if(validmove.validateMove(par1.toInt(), par2.toInt())){
+        chess_board.doMove(par1.toInt(), par2.toInt());
+        Serial.println(chess_board.encodeFEN());
+        chess_board.getNextMove(chess_board.encodeFEN());
+        motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
+        motor_move.setBoard(chess_board.num_board);
+        validmove.updateBoard(chess_board.encodeFEN());
+        on_move = 0;
+      }else{
+        Serial.println("NELEGALNI TAH!");
+      }
+      
       instream = "";
     }else if(_com == "pms"){
       Serial.print("Parametr 1: ");
@@ -197,12 +209,19 @@ void loop() {
       int from = par1.toInt();
       int to = par2.toInt();
 
-      chess_board.doMove(from, to, par3);
-      Serial.println(chess_board.encodeFEN());
-      chess_board.getNextMove(chess_board.encodeFEN());
-      motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
-      motor_move.setBoard(chess_board.num_board);
-      on_move = 0;
+
+      if(validmove.validateMove(from, to)){
+        chess_board.doMove(from, to, par3);
+        Serial.println(chess_board.encodeFEN());
+        chess_board.getNextMove(chess_board.encodeFEN());
+        motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
+        motor_move.setBoard(chess_board.num_board);
+        validmove.updateBoard(chess_board.encodeFEN());
+        on_move = 0;
+      }else{
+        Serial.println("NELEGALNI TAH!");
+      }
+
       instream = "";
     }
   }
@@ -367,7 +386,7 @@ void readCommand(String _command){
       int state = _state.toInt();
       game_mode = state;
       Serial.print("Herni mod nastaveny na: ");
-      Serial.println(state);
+      Serial.println(state); 
     }
 
 }
