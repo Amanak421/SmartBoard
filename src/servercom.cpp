@@ -4,8 +4,8 @@ ServerCom::ServerCom(){
 
 }
 
-void ServerCom::begin(char* _ssid, char* _pass){
-        ssid = _ssid;
+void ServerCom::begin(const char* _ssid, const char* _pass){
+    ssid = _ssid;
     password = _pass;
 
     WiFi.begin(_ssid, _pass);
@@ -355,4 +355,28 @@ void ServerCom::setReverse(bool _reverse){
 
 String ServerCom::retSpecMove(){
   return spec_move;
+}
+
+void ServerCom::scan() {
+  Serial.println("scan start");
+
+  // WiFi.scanNetworks will return the number of networks found
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0) {
+      Serial.println("no networks found");
+  } else {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i) {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.println(WiFi.SSID(i));
+      delay(10);
+	  ssids.push_back(WiFi.SSID(i));
+    }
+  }
+  Serial.println("");
+
 }

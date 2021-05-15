@@ -15,7 +15,8 @@
 #define ELL_PIN 13
 
 //konstanta pro kalibraci motorů
-#define ACC_MOTOR_MOVE 1
+#define ACC_MOTOR_MOVE_X 0.9851
+#define ACC_MOTOR_MOVE_Y 1.0057
 
 
 
@@ -34,9 +35,9 @@ private:
 
     int game_mode = ROBOT;
 
-    const int STEPS_PER_MILIMETER = 5;
+    const int STEPS_PER_MILIMETER = 20;
     const double ANGLE_PER_STEP = 1.8;
-    const int ANGLE_PER_MILIMETER = 9;
+    const int ANGLE_PER_MILIMETER = 36;
 
     // rozměry políčka šachovnice
     int cell_x = 50;
@@ -205,6 +206,9 @@ public:
     void setReverse(bool _reverse);
 
     void setGameMode(int _gameMode);
+
+    void rotateX(double _angle);
+    void rotateY(double _angle);
 
     String last_special_move = "none";
 

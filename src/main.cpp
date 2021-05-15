@@ -5,6 +5,7 @@
 
 #include "chess_board.h"
 #include "validate_move.h"
+#include "display.h"
 
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
@@ -25,6 +26,8 @@ ChessBoard chess_board;
 
 ValidateMove validmove;
 
+Display display;
+
 char ssid[] = "andrlink";
 char password[] = "1kub157201";
 
@@ -39,8 +42,8 @@ unsigned long last_activation = 0;
 
 bool game_started = false;
 
-const int INTERNET = 0;
-const int ENGINE = 1;
+/*const int INTERNET = 0;
+const int ENGINE = 1;*/
 
 int game_mode = -1;
 
@@ -53,13 +56,22 @@ void setup() {
 
   motor_move.setBoard(board);   //nastaví původní šachovnici
 
-  servercom.begin(ssid, password); //připojí se k síti
+  //servercom.begin(ssid, password); //připojí se k síti
 
   //validmove.showPossibleMoves(13);
   /*Serial.print("Mohu provest tah z 64 na 44: ");
   Serial.println(validmove.validateMove(64, 44));*/
 
+  display.begin();
+	display.setPage();
+	servercom.scan();
+	display.setWifiList(servercom.ssids);
+
+  motor_move.returnToHome();
+
+
   Serial.println("Zadejte command: ");
+  
 
 }
 
@@ -70,6 +82,26 @@ void loop() {
     instream = Serial.readString();
     instream.trim();
     readCommand(instream);
+  }
+
+  display.updateCursor();
+	display.updateButton();
+
+	if(display.wifiRefresh()){
+		servercom.scan();
+		display.setWifiList(servercom.ssids);
+    display.wifiRefreshComplete();
+	}else if(display.wifiConnect()){
+    const char* ssid = display.ssid();
+    const char* pass = display.pass();
+    servercom.begin(ssid, pass);
+    display.wifiLoadComplete();
+  }else if(display.wifiDissconnect()){
+    WiFi.disconnect();
+    display.wifiDisconnectComplete();
+  }else if(display.gameStart()){
+    game_started = true;
+    game_mode = display.gameMode();
   }
 
   if(millis() - last_activation > CHECK_DELAY && game_started && game_mode == INTERNET){
@@ -171,7 +203,9 @@ void loop() {
 
   }
 
-  if(game_mode == ENGINE){
+  if(game_mode == ENGINE && game_started){
+
+    /************* KONZOLE *****************************/
     String _com = instream.substring(0, instream.indexOf(' '));
     if(_com == "pm"){
       Serial.print("Parametr 1: ");
@@ -224,6 +258,9 @@ void loop() {
 
       instream = "";
     }
+  
+
+
   }
 
 }

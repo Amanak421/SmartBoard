@@ -31,10 +31,12 @@ private:
 
 
 public:
+    std::vector<String> ssids;
     String chessstring;
+    
     ServerCom();
 
-    void begin(char* _ssid, char* _pass);
+    void begin(const char* _ssid, const char* _pass);
 
     String httpGetChessboard();
 
@@ -65,12 +67,7 @@ public:
     int motor_move_board[8][8];
     void decodeChessBoard();
 
-
-
-
-
-
-
+    void scan();
 };
 
 

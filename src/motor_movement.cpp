@@ -753,7 +753,7 @@ void MotorMovement::returnToHome(){
     delay(100);
     moveToEndstop(MOTOR_Y, 1);
     delay(100);
-    stepper_x.rotate(calculateAngle(rest_cell_x) * ACC_MOTOR_MOVE);
+    stepper_x.move(calculateAngle(rest_cell_x) * ACC_MOTOR_MOVE_X);
     act_cell_pos = {1, 0};
 
 }
@@ -769,7 +769,7 @@ void MotorMovement::moveToEndstop(int _XY, int _direction){     //MOŽNO PŘIDAT
         Serial.print("ENDSTOP REACHED in direction: ");
         Serial.println(_direction);
         stepper_x.stop();
-        stepper_x.rotate(90 * ACC_MOTOR_MOVE * _direction * -1);
+        stepper_x.rotate(90 * ACC_MOTOR_MOVE_X * _direction * -1);
     }else if(_XY == MOTOR_Y){   //motor y
         Serial.println("START MOTOR Y");
         stepper_y.startMove(100 * _direction * MOTOR_STEPS * MICROSTEPS);
@@ -779,7 +779,7 @@ void MotorMovement::moveToEndstop(int _XY, int _direction){     //MOŽNO PŘIDAT
         Serial.print("ENDSTOP REACHED in direction: ");
         Serial.println(_direction);
         stepper_y.stop();
-        stepper_y.rotate(202.5 * ACC_MOTOR_MOVE * _direction * -1);
+        stepper_y.rotate(202.5 * ACC_MOTOR_MOVE_Y * _direction * -1);
     }
 
 }
@@ -796,20 +796,20 @@ void MotorMovement::setMagnetState(int _state){     //HOTOVO
 }
 
 double MotorMovement::calculateAngle(int _milimeters){  //HOTOVO
-    int _value = _milimeters * ANGLE_PER_MILIMETER;
+    int _value = _milimeters * STEPS_PER_MILIMETER;
     return _value;
 }
 
 void MotorMovement::moveCorToCen(int _dir){     //HOTOVO
     if(_dir == 1 && motor_cc_position == false){
         //provede pohyb na střed políčka
-        stepper_x.rotate(calculateAngle(cell_x / 2) * ACC_MOTOR_MOVE);
-        stepper_y.rotate(calculateAngle(cell_y / 2) * ACC_MOTOR_MOVE * -1);
+        stepper_x.move(calculateAngle(cell_x / 2) * ACC_MOTOR_MOVE_X);
+        stepper_y.move(calculateAngle(cell_y / 2) * ACC_MOTOR_MOVE_Y * -1);
         motor_cc_position = true; //zapamatuje si tuto pozici
     }else if(_dir == -1 && motor_cc_position == true){
         //provede pohyb na okraj políčka
-        stepper_x.rotate(calculateAngle(cell_x / 2) * ACC_MOTOR_MOVE * -1);
-        stepper_y.rotate(calculateAngle(cell_y / 2) * ACC_MOTOR_MOVE);
+        stepper_x.move(calculateAngle(cell_x / 2) * ACC_MOTOR_MOVE_X * -1);
+        stepper_y.move(calculateAngle(cell_y / 2) * ACC_MOTOR_MOVE_Y);
         motor_cc_position = false; //zapamatuje si totu volbu
     }else{
         Serial.println("Tento pohyb nemuze byt proveden!");
@@ -827,9 +827,9 @@ void MotorMovement::moveMotorEStop(double _angle, int _dir, int _motor){        
     }
 
     if(_motor == X_MOTOR){
-        stepper_x.rotate(_angle * dir * ACC_MOTOR_MOVE);
+        stepper_x.move(_angle * dir * ACC_MOTOR_MOVE_X);
     }else if(_motor == Y_MOTOR){
-        stepper_y.rotate(_angle * dir * ACC_MOTOR_MOVE);
+        stepper_y.move(_angle * dir * ACC_MOTOR_MOVE_Y);
     }
     
     Serial.println("Pohyb proveden...");
@@ -1232,4 +1232,12 @@ void MotorMovement::doSpecialMoveWithouMotors(int _from, int _to, String _spec){
         board[from_row][from_column] = 0;
         board[to_row][to_column] = 2;
     }
+}
+
+void MotorMovement::rotateX(double _angle){
+    //stepper_x.rotate(_angle);
+    stepper_x.move(_angle);
+}
+void MotorMovement::rotateY(double _angle){
+    stepper_y.move(_angle);
 }
