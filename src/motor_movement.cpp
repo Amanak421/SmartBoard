@@ -1084,7 +1084,8 @@ void MotorMovement::doDiagonalMove(double _angle_x, double _angle_y, int _dir_x,
         dir_y = 1;
     }
 
-    diaMoveControl.rotate(_angle_x * dir_x, _angle_y * dir_y);
+    //diaMoveControl.rotate(_angle_x * dir_x, _angle_y * dir_y);
+    diaMoveControl.move(_angle_x * dir_x * ACC_MOTOR_MOVE_X, _angle_y * dir_y * ACC_MOTOR_MOVE_Y);
 
 }
 

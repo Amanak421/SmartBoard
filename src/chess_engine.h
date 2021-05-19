@@ -17,8 +17,8 @@ const char fig_symb1[]=" pNBRQK";
 
 int countin=0,countall=0;
 
-const int MAXSTEPS=150;
-const int MAXDEPTH=30;
+const int MAXSTEPS=100;
+const int MAXDEPTH=20;  //původně 30
 
 typedef struct {
   signed char f1,f2; //    

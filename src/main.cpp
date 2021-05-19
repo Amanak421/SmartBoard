@@ -6,6 +6,7 @@
 #include "chess_board.h"
 #include "validate_move.h"
 #include "display.h"
+#include "piece_detect.h"
 
   int board[8][8] = {
       {2, 3, 4, 5, 6, 4, 3, 2},
@@ -27,6 +28,8 @@ ChessBoard chess_board;
 ValidateMove validmove;
 
 Display display;
+
+PieceDetect piece_detect;
 
 char ssid[] = "andrlink";
 char password[] = "1kub157201";
@@ -69,6 +72,10 @@ void setup() {
 
   motor_move.returnToHome();
 
+  while(!piece_detect.startPoss()){
+    piece_detect.printPieceBoard();
+  }
+
 
   Serial.println("Zadejte command: ");
   
@@ -76,6 +83,26 @@ void setup() {
 }
 
 void loop() {
+
+  //piece_detect.printPieceBoard();
+  //piece_detect.checkMove();
+  /*piece_detect.checkMove();
+  if(piece_detect.moveCompleted()){
+    Serial.print("Odebrano z: ");
+    Serial.println(piece_detect.last_from);
+    Serial.print("Umisteno na: ");
+    Serial.println(piece_detect.last_to);
+    if(validmove.validateMove(piece_detect.last_from + 1, piece_detect.last_to + 1)){
+      Serial.println("Tah byl proveden uspesne!");
+      piece_detect.finishMove();
+    }else{
+      Serial.println("Selhalo!!!!!");
+      while(true){
+
+      }
+    }
+  }*/
+  
 
 
   if(Serial.available() > 0){
@@ -198,12 +225,39 @@ void loop() {
       Serial.println("Jsi na tahu update namá cenu...");
     }
 
-    /*kotrola databáze*/
+    //kotrola databáze
     last_activation = millis();
 
   }
 
   if(game_mode == ENGINE && game_started){
+
+    piece_detect.checkMove();   //načte desku
+    if(piece_detect.moveCompleted()){
+      Serial.print("Odebrano z: ");
+      Serial.println(piece_detect.last_from);
+      Serial.print("Umisteno na: ");
+      Serial.println(piece_detect.last_to);
+      if(validmove.validateMove(piece_detect.last_from + 1, piece_detect.last_to + 1)){
+        Serial.println("Tah byl proveden uspesne!");
+        piece_detect.finishMove();
+        Serial.println("Generuji tah oponenta");
+        chess_board.doMove(piece_detect.last_from + 1, piece_detect.last_to + 1);
+        Serial.println(chess_board.encodeFEN());
+        chess_board.getNextMove(chess_board.encodeFEN());
+        motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
+        motor_move.setBoard(chess_board.num_board);
+        motor_move.printBoard();
+        validmove.updateBoard(chess_board.encodeFEN());
+        piece_detect.updateBoard(chess_board.encodeFEN());
+      }else{
+        Serial.println("Selhalo!!!!!");
+        while(!piece_detect.backTurn()){
+          Serial.println("Vratte figurky na puvodni misto!!!");
+        }
+        Serial.println("Vse je vporadku... Muzete tahnout validni tah");
+      }
+    }
 
     /************* KONZOLE *****************************/
     String _com = instream.substring(0, instream.indexOf(' '));
@@ -259,8 +313,6 @@ void loop() {
       instream = "";
     }
   
-
-
   }
 
 }

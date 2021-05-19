@@ -59,7 +59,7 @@ void Display::encoderBegin(){
 	ESP32Encoder::useInternalWeakPullResistors=UP;
 
 	// use pin 19 and 18 for the first encoder
-	encoder.attachHalfQuad(5, 17);
+	encoder.attachHalfQuad(27, 17);
 	// use pin 17 and 16 for the second encoder
 		
 	// set starting count value after attaching
@@ -134,6 +134,9 @@ bool Display::updateEncoder(){
             act_cursor = max_cursor;
             encoder.setCount(max_cursor);
         }
+
+        Serial.print(" Max cursor: ");
+        Serial.println(max_cursor);
 
         if(act_cursor != cursor){
             Serial.println("Encoder count = " + String(act_cursor));
