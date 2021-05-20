@@ -25,7 +25,21 @@ private:
 
     String act_piece_pos[8][8];
 
+    char fen_board[8][8];
+
     bool reverse = false;
+
+    void strToFen();
+
+    int on_move = 1;
+
+    bool w_cast_k = true;
+    bool w_cast_q = true;
+    bool b_cast_k = true;
+    bool b_cast_q = true;
+
+    int last_from = -1;
+    int last_to = -1;
 
     
 
@@ -68,6 +82,10 @@ public:
     void decodeChessBoard();
 
     void scan();
+
+    String encodeFEN();
+
+    void updateLastMove(int _from, int _to);
 };
 
 

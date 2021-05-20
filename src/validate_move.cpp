@@ -940,6 +940,8 @@ void ValidateMove::updateBoard(String _fen){
         
     }
 
+    Serial.println("VALID MOVE");
+
     for(int i = 0; i < 8; i++){
         for(int k = 0; k < 8; k++){
             Serial.print(board[i][k]);

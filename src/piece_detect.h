@@ -13,7 +13,7 @@ private:
 
     #define DATA_IN 4  //data z MUX
     const int DATA_PINS[8] = {P0, P1, P2, P3, P4, P5, P6, P7};
-    const int ROW_PINS[8] = {15, 2, 0, 4, 16, 5, 18, 19};
+    const int ROW_PINS[8] = {15, 2, 0, 4, 16, 17, 18, 19};
 
     #define READ_DELAY 150  //pauza mezi čtením šachovnice
 
@@ -69,6 +69,8 @@ private:
     const int confirm_scans = 3;
     int act_confirm_scan = 0;
 
+    bool reverse = false;   //slouží k obrácení šachovnice při updatování šachovnice
+
     int last_piece_out = -1;
 
     int readMUX(int channel);       //přečte hodnotu z určitého kanálu MUX
@@ -103,6 +105,11 @@ public:
     bool startPoss();
 
     bool backTurn();
+
+    void makeMoveFromServer(String _move);
+
+    void setReverse(bool _rev);
+    void setPlayerColor(int _color);
 
 };
 

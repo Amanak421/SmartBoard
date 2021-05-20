@@ -59,7 +59,7 @@ void setup() {
 
   motor_move.setBoard(board);   //nastaví původní šachovnici
 
-  //servercom.begin(ssid, password); //připojí se k síti
+  servercom.begin(ssid, password); //připojí se k síti
 
   //validmove.showPossibleMoves(13);
   /*Serial.print("Mohu provest tah z 64 na 44: ");
@@ -135,6 +135,7 @@ void loop() {
 
     if(on_move != player_color){
 
+
       if(servercom.httpGetLastOnMove() != player_color_str && servercom.httpGetLastOnMove() != "error"){
           //je potřeba získat šachovnici
           motor_move.printBoard();
@@ -150,7 +151,10 @@ void loop() {
             }
           }
           motor_move.setBoard(helper_board);
+          piece_detect.updateBoard(servercom.encodeFEN());
+          validmove.updateBoard(servercom.encodeFEN());
           motor_move.printBoard();
+
           if(servercom.retSpecMove() != "none" || servercom.retSpecMove() != ""){
 
             if(servercom.retSpecMove() == "exchd"){
@@ -223,6 +227,66 @@ void loop() {
 
     }else{
       Serial.println("Jsi na tahu update namá cenu...");
+
+      /* DETEKCE FIGUREK  */
+
+      piece_detect.checkMove();   //načte desku
+      if(piece_detect.moveCompleted()){
+        Serial.print("Odebrano z: ");
+        Serial.println(piece_detect.last_from);
+        Serial.print("Umisteno na: ");
+        Serial.println(piece_detect.last_to);
+        if(validmove.validateMove(piece_detect.last_from + 1, piece_detect.last_to + 1)){
+          Serial.println("Tah byl proveden uspesne!");
+          piece_detect.finishMove();
+          /*Serial.println("Generuji tah oponenta");
+          chess_board.doMove(piece_detect.last_from + 1, piece_detect.last_to + 1);
+          Serial.println(chess_board.encodeFEN());
+          chess_board.getNextMove(chess_board.encodeFEN());
+          motor_move.doMoveFromServer(chess_board.last_from, chess_board.last_to);
+          motor_move.setBoard(chess_board.num_board);
+          motor_move.printBoard();
+          validmove.updateBoard(chess_board.encodeFEN());
+          piece_detect.updateBoard(chess_board.encodeFEN());*/
+          servercom.printBoard();
+
+
+          piece_detect.last_from += 1;
+          piece_detect.last_to += 1;
+
+          /*int reverse_from = (70 + (2 * (piece_detect.last_from % 10))) - piece_detect.last_from;
+          int reverse_to = (70 + (2 * (piece_detect.last_to % 10))) - piece_detect.last_to;*/
+
+          Serial.print("FROM: ");
+          Serial.println(piece_detect.last_from);
+          Serial.print("TO:");
+          Serial.println(piece_detect.last_to);
+
+
+          servercom.updateLastMove(piece_detect.last_from, piece_detect.last_to);   //aktualizuje poslední tah ve třídě
+          motor_move.doMoveWithoutMotors(piece_detect.last_from, piece_detect.last_to);   //provede tah na interní šachovnici ve třídě motorů
+          servercom.doMove(piece_detect.last_from, piece_detect.last_to);   //provede tah na desce třídy pro komunikaci se serverem
+          //chess_board.doMove(piece_detect.last_from, piece_detect.last_to);
+          String last_move = String(piece_detect.last_from) + "_" + String(piece_detect.last_to);   //vytvoří last_move (spojí poslední tah do jednoho stringu)
+          servercom.httpSend(servercom.encodeChessstring(), player_color_str, last_move, "none");   //odešle šachovnici na server
+          Serial.println("MOTORY: ");
+          motor_move.printBoard();
+          Serial.println("SERVER: ");
+          servercom.printBoard();
+          validmove.updateBoard(servercom.encodeFEN());   //aktualizuje šachovnici pro validaci tahů
+          piece_detect.updateBoard(servercom.encodeFEN());  //aktualizuje šachovnici pro detekci figurek
+          Serial.println(servercom.encodeChessstring());
+
+          on_move = 0;
+
+        }else{
+          Serial.println("Selhalo!!!!!");
+          while(!piece_detect.backTurn()){
+            Serial.println("Vratte figurky na puvodni misto!!!");
+          }
+          Serial.println("Vse je vporadku... Muzete tahnout validni tah");
+        }
+      }
     }
 
     //kotrola databáze
@@ -397,6 +461,7 @@ void readCommand(String _command){
 
       servercom.setGameId(game_id);
       game_started = true;
+      //piece_detect.setPlayerColor(1);
 
     }else if(_com == "opm"){
 
@@ -431,6 +496,8 @@ void readCommand(String _command){
       int state = _state.toInt();
       motor_move.setReverse(state);
       servercom.setReverse(state);
+      chess_board.setReverse(state);
+      piece_detect.setReverse(state);
       Serial.print("Reverse nataveno na: ");
       Serial.println(state);
 
@@ -479,3 +546,4 @@ void readCommand(String _command){
     }
 
 }
+

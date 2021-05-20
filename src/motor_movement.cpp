@@ -1152,14 +1152,14 @@ void MotorMovement::doMoveFromServer(int _from, int _to){
 
 void MotorMovement::doMoveWithoutMotors(int _from, int _to){
 
-    if(reverse){
+    /*if(reverse){
 
     int _from_x = _from % 10;
     int _to_x = _to % 10;
 
     _from = (70 + _from_x*2) - _from;
     _to = (70 + _to_x*2) - _to;
-  }
+    }*/
 
     int from_column = _from % 10;
     int from_row = (_from - (_from % 10)) / 10;

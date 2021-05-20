@@ -81,6 +81,8 @@ public:
 
     String getLastMove();
 
+    void makeMoveFromServer(String _move);
+
     
 
 };

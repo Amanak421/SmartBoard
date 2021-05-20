@@ -7,6 +7,14 @@ ChessBoard::ChessBoard(){
 
 void ChessBoard::doMove(int _from, int _to){
 
+    if(reverse){
+        int _from_x = _from % 10;
+        int _to_x = _to % 10;
+
+        _from = (70 + _from_x*2) - _from;
+        _to = (70 + _to_x*2) - _to;
+    }
+
     int from_column = _from % 10;
     int from_row = (_from - (_from % 10)) / 10;
 
@@ -225,7 +233,7 @@ String ChessBoard::encodeFEN(){
     Serial.println(fen_board[to_row][to_column]);
     Serial.println(fen_board[to_row][to_column]);
 
-    if((from_row == 1 || from_row == 6) && (fen_board[to_row][to_column] == 'p' || fen_board[to_row][to_column] == 'P')){
+    if((from_row == 1 || from_row == 6) && (fen_board[to_row][to_column] == 'p' || fen_board[to_row][to_column] == 'P') && (to_row == 3 || to_row == 4)){
         int enn_column = to_column;
         int enn_row = to_row - 1;
 
@@ -457,4 +465,8 @@ void ChessBoard::stopTask(){
 
 void ChessBoard::startTask(){
     createTask();
+}
+
+void ChessBoard::setReverse(bool _state){
+    reverse = _state;
 }

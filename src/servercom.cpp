@@ -380,3 +380,211 @@ void ServerCom::scan() {
   Serial.println("");
 
 }
+
+String ServerCom::encodeFEN(){
+
+    strToFen();
+
+    String fen;
+
+    for(int i = 0; i < 8; i++){
+        int blank_spaces = 0;
+        for(int k = 0; k < 8; k++){
+
+            if(fen_board[i][k] != ' '){
+                fen += fen_board[i][k];
+            }else{
+
+                blank_spaces += 1;
+                if(fen_board[i][k+1] != ' ' || k+1 == 8){
+                    fen += blank_spaces;
+                    blank_spaces = 0;
+                }
+
+            }
+
+        }
+
+        if(i != 7){
+            fen += '/';
+        }
+    }
+
+    fen += " ";
+
+    if(on_move == 0){
+        fen += "b";
+    }else{
+        fen += "w";
+    }
+
+    fen += " ";
+
+    if(w_cast_k){
+        fen += "K";
+    }
+
+    if(w_cast_q){
+        fen += "Q";
+    }
+
+    if(b_cast_k){
+        fen += "k";
+    }
+
+    if(b_cast_k){
+        fen += "q";
+    }
+
+    if(!w_cast_k && !w_cast_q && !b_cast_k && !b_cast_q){
+        fen += "-";
+    }
+
+    fen += " ";
+
+    int from_column = last_from % 10;
+    int from_row = (last_from - (last_from % 10)) / 10;
+
+    int to_column = last_to % 10;
+    int to_row = (last_to - (last_to % 10)) / 10;
+
+    /*Serial.println(last_from);
+    Serial.println(last_to);
+
+    Serial.println(from_column);
+    Serial.println(from_row);
+    Serial.println(to_column);
+    Serial.println(to_row);
+
+    Serial.println(fen_board[to_row][to_column]);
+    Serial.println(fen_board[to_row][to_column]);*/
+
+    if((from_row == 1 || from_row == 6) && (fen_board[to_row][to_column] == 'p' || fen_board[to_row][to_column] == 'P') && (to_row == 3 || to_row == 4)){
+        int enn_column = to_column;
+        int enn_row = to_row - 1;
+
+        switch (enn_column)
+        {
+        case 0:
+            fen += "a";
+            break;
+        case 1:
+            fen += "b";
+            break;
+        case 2:
+            fen += "c";
+            break;
+        case 3:
+            fen += "d";
+            break;
+        case 4:
+            fen += "e";
+            break;
+        case 5:
+            fen += "f";
+            break;
+        case 6:
+            fen += "g";
+            break;
+        case 7:
+            fen += "h";
+            break;
+        
+        default:
+            break;
+        }
+
+        fen += enn_row;
+    }else{
+        fen += "-";
+    }
+
+    fen += " ";
+    fen += "0";
+    fen += " ";
+    fen += "1";
+
+    Serial.print("FEN ZE SERVERU: ");
+    Serial.println(fen);
+
+    return fen;
+
+}
+
+void ServerCom::strToFen(){   //převede chesstring na fen board
+  for(int i = 0; i < 8; i++){
+    for(int k = 0; k < 8; k++){
+      if(act_piece_pos[i][k] == "w_1"){
+        fen_board[i][k] = 'P';
+      }else if(act_piece_pos[i][k] == "w_2"){
+        fen_board[i][k] = 'R';
+      }else if(act_piece_pos[i][k] == "w_3"){
+        fen_board[i][k] = 'N';
+      }else if(act_piece_pos[i][k] == "w_4"){
+        fen_board[i][k] = 'B';
+      }else if(act_piece_pos[i][k] == "w_5"){
+        fen_board[i][k] = 'Q';
+      }else if(act_piece_pos[i][k] == "w_6"){
+        fen_board[i][k] = 'K';
+      }else if(act_piece_pos[i][k] == "b_1"){
+        fen_board[i][k] = 'p';
+      }else if(act_piece_pos[i][k] == "b_2"){
+        fen_board[i][k] = 'r';
+      }else if(act_piece_pos[i][k] == "b_3"){
+        fen_board[i][k] = 'n';
+      }else if(act_piece_pos[i][k] == "b_4"){
+        fen_board[i][k] = 'b';
+      }else if(act_piece_pos[i][k] == "b_5"){
+        fen_board[i][k] = 'q';
+      }else if(act_piece_pos[i][k] == "b_6"){
+        fen_board[i][k] = 'k';
+      }else{
+        fen_board[i][k] = ' ';
+      }
+    }
+  }
+
+  if(reverse){
+
+      char helper_board[8][8];
+
+
+      for(int i = 0; i < 8; i++){
+        for(int k = 0; k < 8; k++){
+          char _help = fen_board[i][k];
+          int _curr_index = i*10 + k;
+          int _new_index = (70 + k*2) - _curr_index;
+          //Serial.print("Novy index: ");
+          //Serial.println(_new_index);
+          int _new_k = _new_index % 10;
+          int _new_i = (_new_index - (_new_index % 10)) / 10;
+
+          if(isLowerCase(_help)){
+            _help = toUpperCase(_help);
+          }else{
+            _help = toLowerCase(_help);
+          }
+
+          /*Serial.print("| ");
+          Serial.print(_new_i);
+          Serial.print(_new_k);*/
+          helper_board[_new_i][_new_k] = _help;
+        }
+      }
+      
+      Serial.println("PREVRACENA SACHOVNICE SERVER: ");
+      for(int i = 0; i < 8; i++){
+        for(int k = 0; k < 8; k++){
+          fen_board[i][k] = helper_board[i][k];
+          Serial.print(helper_board[i][k]);
+        }
+        Serial.println();
+      }
+
+  }
+}
+
+void ServerCom::updateLastMove(int _from, int _to){
+    last_from = _from;
+    last_to = _to;
+}

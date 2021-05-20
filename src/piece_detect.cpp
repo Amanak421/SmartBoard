@@ -19,7 +19,7 @@ PieceDetect::PieceDetect(){
 
     for(int i = 0; i < 8; i++){
       pinMode(ROW_PINS[i], OUTPUT);
-      digitalWrite(ROW_PINS[i], HIGH);
+      digitalWrite(ROW_PINS[i], LOW);
     }
 
     for(int i = 0; i < 8; i++){
@@ -376,7 +376,7 @@ int PieceDetect::checkDiff(){
 
         if(temp_board[i][k] == 1 && last_board[i][k] == 0){
           char piece_on_cell = fen_board[i][k];
-          if(isLowerCase(piece_on_cell)){
+          if((isUpperCase(fen_board[i][k]) && player_color != 0) || (isLowerCase(fen_board[i][k]) && player_color != 1)){
             Serial.println("Toto se nepocita -> figurka vyhozena -> probiha kontrola...");
             if(act_confirm_scan < confirm_scans){
               Serial.println("KONTROLA");
@@ -389,6 +389,7 @@ int PieceDetect::checkDiff(){
               Serial.println(i * 10 + k);
               last_board[i][k] = 1;
               act_confirm_scan = 0;
+              last_piece_out = i * 10 + k;
             }
             
           }else{
@@ -402,6 +403,7 @@ int PieceDetect::checkDiff(){
           last_to = i * 10 + k;
           move_procc = false;
           move_completed = true;
+          /*ROŠÁDA to-do */
         }
 
       }
@@ -531,9 +533,79 @@ bool PieceDetect::backTurn(){
   scanBoard();
 
   if(isSame()){
+    move_completed = false;
+    move_procc = false;
     return true;
   }
 
   return false;
 
+}
+
+void PieceDetect::makeMoveFromServer(String _move){   // NEPOUŽITO
+
+  //Serial.println(_move);
+
+  String from_str = _move.substring(0, 2);
+  int _from = from_str.toInt();
+  String to_str = _move.substring(3);
+  int _to = to_str.toInt();
+
+  if(reverse){
+
+        int from_x = _from % 10;
+        int to_x = _to % 10;
+
+        _from = (70 + from_x*2) - _from;
+        _to = (70 + to_x*2) - _to;
+
+  }
+
+  _from += 1;
+  _to += 1;
+
+  int from_column = _from % 10;
+  int from_row = (_from - (_from % 10)) / 10;
+
+  int to_column = _to % 10;
+  int to_row = (_to - (_to % 10)) / 10;
+
+  if(fen_board[from_row][from_column] == 'K'){
+      w_cast_q = false;
+  }else if(fen_board[from_row][from_column] == 'k'){
+      b_cast_q = false;
+  }
+
+  fen_board[to_row][to_column-1] = fen_board[from_row][from_column-1];
+  fen_board[from_row][from_column-1] = ' ';
+
+  last_board[to_row][to_column-1] = last_board[from_row][from_column-1];
+  last_board[from_row][from_column-1] = 1;
+
+  Serial.println("PIECE DETECT");
+
+  for(int i = 0; i < 8; i++){
+    for(int k = 0; k < 8; k++){
+      Serial.print(fen_board[i][k]);
+      Serial.print(" ");
+    }
+    Serial.println();
+  }
+
+  for(int i = 0; i < 8; i++){
+    for(int k = 0; k < 8; k++){
+      Serial.print(last_board[i][k]);
+      Serial.print(" ");
+    }
+    Serial.println();
+  }
+
+}
+
+void PieceDetect::setReverse(bool _rev){
+  reverse = _rev;
+}
+
+void PieceDetect::setPlayerColor(int _color){
+  player_color = _color;
 }
