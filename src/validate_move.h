@@ -118,6 +118,10 @@ public:
 
     void updateBoard(String _fen);
 
+    bool checkMate(char _color);
+
+    void setPossEnnPassCell(int _dec_based_id);
+
 
 };
 

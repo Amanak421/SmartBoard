@@ -95,6 +95,8 @@ void ServerCom::encodeJson(String _json){
     Serial.print("SPEC_MOVE: ");
     Serial.println(spec_move);
 
+    checkForEnnPass(last_move);
+
 }
 
 String ServerCom::retLastMove(){
@@ -174,31 +176,31 @@ void ServerCom::doSpecialMove(int _from, int _to, String _spec){
       int move_cell = from_column - to_column;
 
       if(move_cell > 0){  //pohneme na levou stranu
+        act_piece_pos[from_row][from_column - 2] = "n_0";
+        act_piece_pos[to_row][to_column - 1] = act_piece_pos[from_row][from_column - 1];
         act_piece_pos[from_row][from_column - 1] = "n_0";
-        act_piece_pos[to_row][to_column] = act_piece_pos[from_row][from_column];
-        act_piece_pos[from_row][from_column] = "n_0";
       }else{      //pohneme na pravou stranu
-        act_piece_pos[from_row][from_column + 1] = "n_0";
-        act_piece_pos[to_row][to_column] = act_piece_pos[from_row][from_column];
         act_piece_pos[from_row][from_column] = "n_0";
+        act_piece_pos[to_row][to_column - 1] = act_piece_pos[from_row][from_column - 1];
+        act_piece_pos[from_row][from_column - 1] = "n_0";
       }
 
       Serial.println("Ennpass...");
 
   }else if(_spec == "exchd"){
-      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[from_row][from_column - 1] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_5";
       Serial.println("Vymena dama");
   }else if(_spec == "exchs"){
-      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[from_row][from_column - 1] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_4";
       Serial.println("Vymena strelec");
   }else if(_spec == "exchk"){
-      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[from_row][from_column - 1] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_3";
       Serial.println("Vymena kun");
   }else if(_spec == "exchv"){
-      act_piece_pos[from_row][from_column] = "n_0";
+      act_piece_pos[from_row][from_column - 1] = "n_0";
       act_piece_pos[to_row][to_column] = player_color + "_2";
       Serial.println("Vymena vez");
   }
@@ -587,4 +589,80 @@ void ServerCom::strToFen(){   //převede chesstring na fen board
 void ServerCom::updateLastMove(int _from, int _to){
     last_from = _from;
     last_to = _to;
+}
+
+void ServerCom::checkForEnnPass(String _last_move){
+  String from_str = _last_move.substring(0, 2);
+  int from = from_str.toInt();
+  String to_str = _last_move.substring(3);
+  int to = to_str.toInt();
+
+  /*if(reverse){
+
+        int from_x = from % 10;
+        int to_x = to % 10;
+
+        from = (70 + from_x*2) - from;
+        to = (70 + to_x*2) - to;
+
+  }*/
+
+  int from_column = from % 10;
+  int from_row = (from - from_column) / 10;
+
+  int to_column = to % 10;
+  int to_row = (to - to_column) / 10;
+
+  Serial.println("CHECKING FOR ENNPASS");
+
+  Serial.print("FROM | TO -> ");
+  Serial.print(from);
+  Serial.print(" | ");
+  Serial.println(to);
+
+  Serial.print("STRING: ");
+  Serial.println(act_piece_pos[from_row][from_column]);
+
+  if((act_piece_pos[from_row][from_column] == "b_1" && from_row == 1 && abs(to_row - from_row) == 2) || (act_piece_pos[from_row][from_column] == "w_1" && from_row == 6 && abs(to_row - from_row) == 2)){
+    Serial.print("POVOLUJI ENN PASS NA POLICKO: ");
+    String color = act_piece_pos[from_row][from_column].substring(0, 1);
+    if(color == "w"){
+      possible_enn_pass = (to_row + 1) * 10 + to_column;
+      if(reverse){
+        possible_enn_pass = (70 + (possible_enn_pass % 10 ) * 2) - possible_enn_pass;
+      }
+    }else if(color == "b"){
+      possible_enn_pass = (to_row - 1) * 10 + to_column;
+      if(reverse){
+        possible_enn_pass = (70 + (possible_enn_pass % 10 ) * 2) - possible_enn_pass;
+      }
+    }else{
+      Serial.println("BEZ BARVY");
+    }
+    Serial.println(possible_enn_pass);
+  }else{
+    possible_enn_pass = -1;
+  }
+
+
+}
+
+int ServerCom::retEnnPassCell(){
+  return possible_enn_pass;
+}
+
+void ServerCom::setCastle(char _color, char _site, bool _state){
+  if(_color == 'w'){
+    if(_site == 'k'){
+      w_cast_k = _state;
+    }else{
+      w_cast_q = _state;
+    }
+  }else{
+    if(_site == 'k'){
+      b_cast_k = _state;
+    }else{
+      b_cast_q = _state;
+    }
+  }
 }

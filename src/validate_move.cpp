@@ -199,6 +199,8 @@ void ValidateMove::generatePawnMoves(int _start, char _piece){
             }
         }
 
+       
+
         int endCell = _start + PawnDirections[dir];
         int end_column = endCell % 8;
         //int _end_row = ((endCell - end_column) / 8);
@@ -320,6 +322,7 @@ void ValidateMove::generateKingMoves(int _start){
 void ValidateMove::generateLegalMoves(){
 
     pseudo_legal_moves.clear();
+    legal_moves.clear();
 
     Serial.println("Generuji pseudolegalni tahy...");
 
@@ -874,10 +877,18 @@ bool ValidateMove::validateMove(int _start, int _end){
 
     int end_cell = end_row * 8 + end_column;
 
-    Serial.print("sloupek | radek");
+    Serial.print("sloupek | radek ");
     Serial.print(start_cell);
     Serial.print(" | ");
     Serial.println(end_cell);
+
+    Serial.println("LEGALNI TAHY: ");
+
+    for( int i = 0; i < legal_moves.size(); i++){
+        Serial.print(legal_moves[i].startCell);
+        Serial.print(" | ");
+        Serial.println(legal_moves[i].endCell);
+    }
 
     for(int i = 0; i < legal_moves.size(); i++){
         move_test _move = legal_moves[i];
@@ -949,4 +960,31 @@ void ValidateMove::updateBoard(String _fen){
         Serial.println();
     }
 
+}
+
+bool ValidateMove::checkMate(char _color){
+    if(_color == 'w'){
+        generateLegalMoves();
+        if(legal_moves.size() == 0){
+            return true;
+        }
+    }
+    
+
+    return false;
+}
+
+void ValidateMove::setPossEnnPassCell(int _dec_based_id){
+    Serial.print("DEC BASED: ");
+    Serial.println(_dec_based_id);
+
+    int column = _dec_based_id % 10;
+    int row = (_dec_based_id - column) / 10;
+
+    possibleEnnPassCell = row * 8 + column;
+    
+    possibleEnnPassCell = (56 + 2 * (possibleEnnPassCell % 8)) - possibleEnnPassCell;
+
+    Serial.print("POSSIBLE ENN PASS: ");
+    Serial.println(possibleEnnPassCell);
 }

@@ -66,10 +66,18 @@ private:
     int cast_from = -1;
     int cast_to = -1;
 
+    bool cast_k = false;
+    bool cast_q = false;
+
+    bool last_turn_cast_k = false;
+    bool last_turn_cast_q = false;
+
     const int confirm_scans = 3;
     int act_confirm_scan = 0;
 
     bool reverse = false;   //slouží k obrácení šachovnice při updatování šachovnice
+
+    bool last_enn_pass;
 
     int last_piece_out = -1;
 
@@ -81,10 +89,10 @@ private:
     int readValue(int _column);
     void pickRow(int _row);
 
-    void scanBoard();
+    
     int checkDiff();
 
-    bool isSame();
+    
 
 
 public:
@@ -111,6 +119,13 @@ public:
     void setReverse(bool _rev);
     void setPlayerColor(int _color);
 
+    bool isSame();
+    void scanBoard();
+
+    bool lastTurnCastK();
+    bool lastTurnCastQ();
+    
+    bool checkEnnPass(int _last_from, int _last_to);
 };
 
 

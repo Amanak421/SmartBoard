@@ -618,7 +618,14 @@ void Display::showGameEnginePage(){
 
     case NOT_YOUR_TURN:
         lcd.setCursor(4, 2);
-        lcd.print("Nejsi na tahu");
+        lcd.print("Hraje souper");
+
+    case CORRECT_PIECE:
+        lcd.setCursor(3, 2);
+        lcd.print("Upravte figurku");
+        lcd.setCursor(4, 3);
+        lcd.print("Chyba na: ");
+        lcd.print(str_error_cell);
     
     default:
         break;
@@ -638,4 +645,13 @@ void Display::engineInfoError(int _error){
 
 int Display::gameMode(){
     return selected_game_mode;
+}
+
+void Display::setErrorCell(int _cell){
+
+}
+
+void Display::onTurn(int _on_move){
+    on_move_engine = _on_move;
+    showGameEnginePage();
 }

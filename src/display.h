@@ -44,6 +44,7 @@
 #define NONE 0x00
 #define ILLEGAL_MOVE 0x01
 #define NOT_YOUR_TURN 0x02
+#define CORRECT_PIECE 0x03
 
 class Display{
 
@@ -174,6 +175,10 @@ private:
     void buttonBegin();
     /********************/
 
+    /* chybové políčko */
+    int int_error_cell = -1;
+    String str_error_cell = "--";
+
     void updatePage();      //updatuje stránku, které má být právě načtená, volá ji updateButton
 
 
@@ -201,7 +206,9 @@ public:
     bool gameStart();
     int gameMode();
 
+    void setErrorCell(int _cell);
     void engineInfoError(int _error);
+    void onTurn(int _on_move);
 
     struct Button {     //struktura talačítka
         const uint8_t PIN;

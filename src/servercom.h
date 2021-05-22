@@ -23,7 +23,16 @@ private:
 
     int game_id;
 
-    String act_piece_pos[8][8];
+    String act_piece_pos[8][8] = {
+        {"b_2", "b_3", "b_4", "b_5", "b_6", "b_4", "b_3", "b_2"},
+        {"b_1", "b_1", "b_1", "b_1", "b_1", "b_1", "b_1", "b_1"},
+        {"n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0"},
+        {"n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0"},
+        {"n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0"},
+        {"n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0", "n_0"},
+        {"w_1", "w_1", "w_1", "w_1", "w_1", "w_1", "w_1", "w_1"},
+        {"w_2", "w_3", "w_4", "w_5", "w_6", "w_4", "w_3", "w_2"},
+    };
 
     char fen_board[8][8];
 
@@ -41,7 +50,9 @@ private:
     int last_from = -1;
     int last_to = -1;
 
-    
+    int possible_enn_pass = -1;
+
+    void checkForEnnPass(String _last_move);
 
 
 public:
@@ -86,6 +97,12 @@ public:
     String encodeFEN();
 
     void updateLastMove(int _from, int _to);
+
+    int retEnnPassCell();
+
+    void setCastle(char _color, char _site, bool _state);
+
+    
 };
 
 

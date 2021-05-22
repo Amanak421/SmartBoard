@@ -374,7 +374,7 @@ int PieceDetect::checkDiff(){
 
       if(temp_board[i][k] != last_board[i][k]){
 
-        if(temp_board[i][k] == 1 && last_board[i][k] == 0){
+        if(temp_board[i][k] == 1 && last_board[i][k] == 0 && move_procc == false && move_completed == false){
           char piece_on_cell = fen_board[i][k];
           if((isUpperCase(fen_board[i][k]) && player_color != 0) || (isLowerCase(fen_board[i][k]) && player_color != 1)){
             Serial.println("Toto se nepocita -> figurka vyhozena -> probiha kontrola...");
@@ -394,16 +394,77 @@ int PieceDetect::checkDiff(){
             
           }else{
             last_from = i * 10 + k;
-            Serial.print("Figurka zmizela z: ");
-            Serial.println(last_from);
-            move_procc = true;
+            if((cast_k == true || cast_q == true) && (last_from == 74 || last_from == 4)){
+              continue;
+            }else{
+              Serial.print("Figurka zmizela z: ");
+              Serial.println(last_from);
+              move_procc = true;
+            }
+            
           }
+
           
-        }else if(move_procc && temp_board[i][k] == 0 && last_board[i][k] == 1){
+        }else if(move_procc && temp_board[i][k] == 0 && last_board[i][k] == 1 && move_completed == false){
           last_to = i * 10 + k;
-          move_procc = false;
-          move_completed = true;
-          /*ROŠÁDA to-do */
+          
+          
+            /* ROŠÁDA */
+
+          int from_column = last_from % 10;
+          int from_row = (last_from - from_column) / 10;
+
+          Serial.print("PIECE: ");
+          Serial.println(fen_board[from_row][from_column]);
+
+          if((last_from == 74 || last_from == 4) && (fen_board[from_row][from_column] == 'K' || fen_board[from_row][from_column] == 'k') && (last_to == 76 || last_to == 6) && cast_k == false){
+            Serial.println("POCATEK ROSADY");
+            cast_k = true;
+            cast_from = last_from;
+            cast_to = last_to;
+            move_procc = false;
+            move_completed = false;
+            last_board[from_row][from_column] = 0;
+            last_board[from_row][from_column + 2] = 1;
+          }else if(cast_k == true && (last_from == 77 || last_from == 7)){
+            Serial.println("DOKONCENI RASADY");
+            last_from = cast_from;
+            last_to = cast_to;
+            cast_from = -1;
+            cast_to = -1;
+            cast_k = false;
+            move_procc = false;
+            move_completed = true;
+            last_turn_cast_k = true;
+            Serial.println("ROSADA Z: ");
+            Serial.print(cast_from);
+            Serial.print(" NA: ");
+            Serial.println(cast_to);
+          }else if((last_from == 74 || last_from == 4) && (fen_board[from_row][from_column] == 'K' || fen_board[from_row][from_column] == 'k') && (last_to == 72 || last_to == 2) && cast_q == false){
+            Serial.println("POCATEK ROSADY");
+            cast_q = true;
+            cast_from = last_from;
+            cast_to = last_to;
+            move_procc = false;
+            move_completed = false;
+            last_board[from_row][from_column] = 0;
+            last_board[from_row][from_column - 2] = 1;
+          }else if(cast_q && (last_from == 73 || last_from == 3)){
+            Serial.println("DOKONCENI RASADY");
+            last_from = cast_from;
+            last_to = cast_to;
+            cast_from = -1;
+            cast_to = -1;
+            cast_q = false;
+            move_procc = false;
+            move_completed = true;
+            last_turn_cast_q = true;
+          }else if(cast_k == false && cast_q == false){
+            Serial.println("KLASICKY TAH");
+            move_procc = false;
+            move_completed = true;
+          }
+
         }
 
       }
@@ -419,6 +480,8 @@ void PieceDetect::finishMove(){
     }
   }
   move_completed = false;
+  last_turn_cast_k = false;
+  last_turn_cast_q = false;
 }
 
 bool PieceDetect::moveCompleted(){
@@ -487,11 +550,11 @@ void PieceDetect::updateBoard(String _fen){
       }
     }
 
-    while(!isSame()){
+    /*while(!isSame()){   //lze doplnit do loopu asi
       Serial.println("poupravte figurky, kter mohly byt vyhozeny ze stredu");
       scanBoard();
     }
-    Serial.println("Vse je v poradku");
+    Serial.println("Vse je v poradku");*/
 }
 
 bool PieceDetect::isSame(){
@@ -608,4 +671,26 @@ void PieceDetect::setReverse(bool _rev){
 
 void PieceDetect::setPlayerColor(int _color){
   player_color = _color;
+}
+
+bool PieceDetect::lastTurnCastK(){
+  return last_turn_cast_k;
+}
+bool PieceDetect::lastTurnCastQ(){
+  return last_turn_cast_q;
+}
+
+bool PieceDetect::checkEnnPass(int _last_from, int _last_to){
+  int from_column = _last_from % 10;
+  int from_row = (_last_from - from_column) / 10;
+
+  int to_column = _last_to % 10;
+  int to_row = (_last_to - to_column) / 10;
+
+  if((fen_board[from_row][from_column - 1] == 'P' || fen_board[from_row][from_column - 1] == 'p') && (abs(_last_to - _last_from) == 9 || abs(_last_to - _last_from) == 9) && fen_board[to_row][to_column - 1] == ' '){
+    return true;
+  }else{
+    return false;
+  }
+
 }

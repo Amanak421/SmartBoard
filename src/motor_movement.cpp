@@ -1182,13 +1182,13 @@ void MotorMovement::setGameMode(int _gameMode){
 
 void MotorMovement::doSpecialMoveWithouMotors(int _from, int _to, String _spec){
 
-    if(reverse){
+    /*if(reverse){
         int _from_x = _from % 10;
         int _to_x = _to % 10;
 
         _from = (70 + _from_x*2) - _from;
         _to = (70 + _to_x*2) - _to;
-    }
+    }*/
 
     int from_column = _from % 10;
     int from_row = (_from - (_from % 10)) / 10;
@@ -1211,27 +1211,27 @@ void MotorMovement::doSpecialMoveWithouMotors(int _from, int _to, String _spec){
         int move_cell = from_column - to_column;
 
         if(move_cell > 0){  //pohneme na levou stranu
+        board[from_row][from_column - 2] = 0;       // -1 pro korekci a -1 jako správná pozice
+        board[to_row][to_column - 1] = board[from_row][from_column - 1];
         board[from_row][from_column - 1] = 0;
-        board[to_row][to_column] = board[from_row][from_column];
-        board[from_row][from_column] = 0;
         }else{      //pohneme na pravou stranu
-        board[from_row][from_column + 1] = 0;
-        board[to_row][to_column] = board[from_row][from_column];
-        board[from_row][from_column] = 0;
+        board[from_row][from_column] = 0;       //musíme přičíst 1 tudíž neodečteme nic
+        board[to_row][to_column - 1] = board[from_row][from_column - 1];
+        board[from_row][from_column - 1] = 0;
         }
 
     }else if(_spec == "exchd"){
-        board[from_row][from_column] = 0;
-        board[to_row][to_column] = 5;
+        board[from_row][from_column - 1] = 0;
+        board[to_row][to_column - 1] = 5;
     }else if(_spec == "exchs"){
-        board[from_row][from_column] = 0;
-        board[to_row][to_column] = 4;
+        board[from_row][from_column - 1] = 0;
+        board[to_row][to_column - 1] = 4;
     }else if(_spec == "exchk"){
-        board[from_row][from_column] = 0;
-        board[to_row][to_column] = 3;
+        board[from_row][from_column - 1] = 0;
+        board[to_row][to_column - 1] = 3;
     }else if(_spec == "exchv"){
-        board[from_row][from_column] = 0;
-        board[to_row][to_column] = 2;
+        board[from_row][from_column - 1] = 0;
+        board[to_row][to_column - 1] = 2;
     }
 }
 
